@@ -7,8 +7,8 @@ directories:
 # the installed app reads them from here. REPLACE owner/repo with your public repo.
 publish:
   provider: github
-  owner: YOUR_GITHUB_USERNAME
-  repo: YOUR_REPO_NAME
+  owner: DBastrak
+  repo: Number-Goes-Up
 # electron-vite outputs the bundled app to out/; package that plus package.json.
 files:
   - out/**/*
