@@ -4,6 +4,16 @@
   padding: 24px 28px;
 }
 
+.settings-version {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+
 .settings-select {
   background: var(--bg-2);
   color: var(--text-bright);

@@ -8,6 +8,9 @@ export interface Api {
   // { ok: true, session } or { ok: false, error }.
   login: (username: string) => Promise<any>
 
+  // The app version (from package.json).
+  getAppVersion: () => Promise<string>
+
   // Returns the saved session (for auto-restore on launch), or null.
   getSession: () => Promise<any>
 
@@ -84,6 +87,8 @@ export interface Api {
 // Safe bridge between the renderer (React) and the main process.
 const api: Api = {
   login: (username) => ipcRenderer.invoke('login', username),
+
+  getAppVersion: () => ipcRenderer.invoke('get-app-version'),
 
   getSession: () => ipcRenderer.invoke('get-session'),
 

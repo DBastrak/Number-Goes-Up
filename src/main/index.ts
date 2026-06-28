@@ -228,6 +228,9 @@ app.whenReady().then(() => {
     BrowserWindow.fromWebContents(event.sender)?.close()
   })
 
+  // App version (from package.json), shown in Settings.
+  ipcMain.handle('get-app-version', () => app.getVersion())
+
   // Return the saved session (for auto-restore on launch), or null.
   ipcMain.handle('get-session', () => readSession())
 

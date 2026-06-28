@@ -36,6 +36,12 @@ export default function Settings() {
     })
   }, [])
 
+  // App version, shown at the bottom (from package.json via the main process).
+  const [version, setVersion] = useState('')
+  useEffect(() => {
+    window.api?.getAppVersion?.().then(setVersion)
+  }, [])
+
   function toggleWallpaper(v) {
     setWallpaper(v)
     saveWallpaper(v)
@@ -270,6 +276,8 @@ export default function Settings() {
           </select>
         </Row>
       </section>
+
+      <footer className="settings-version">number go up{version ? ` v${version}` : ''}</footer>
     </div>
   )
 }
