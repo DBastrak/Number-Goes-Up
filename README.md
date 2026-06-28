@@ -39,8 +39,3 @@ src/
       styles/      per-page CSS + theme
 ```
 
-## Next steps
-
-- Wire the login form to real Steam authentication / Web API key.
-- Replace `data/mockData.js` with live data fetched in the main process.
-- Persist settings to disk.
