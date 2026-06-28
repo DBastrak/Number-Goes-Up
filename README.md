@@ -6,7 +6,7 @@ A desktop dashboard for your Destiny 2 raid &amp; dungeon stats. Built with **El
 
 ## Pages
 
-1. **Login** — sign-in screen (accepts any details for now).
+1. **Login** — sign-in screen.
 2. **Library / Stats** — left sidebar of sections; selecting one fills the main panel with that section's games and summary stats.
 3. **Activity / Achievements** — a feed of recent activity plus an achievements list.
 4. **Settings** — account, appearance, and data/sync options.
@@ -35,7 +35,7 @@ src/
     src/
       pages/       Login, Library, Activity, Settings
       components/  TopNav
-      data/        mockData.js (placeholder content)
+      data/        
       styles/      per-page CSS + theme
 ```
 
