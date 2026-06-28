@@ -62,6 +62,21 @@
 .run-filter-select:hover {
   border-color: var(--accent);
 }
+.run-filter-search {
+  background: var(--bg-2);
+  color: var(--text-bright);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  min-width: 170px;
+}
+.run-filter-search::placeholder {
+  color: var(--text-dim);
+}
+.run-filter-search:focus {
+  border-color: var(--accent);
+}
 .run-filter-chips {
   display: flex;
   gap: 4px;

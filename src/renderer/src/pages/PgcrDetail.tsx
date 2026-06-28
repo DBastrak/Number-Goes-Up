@@ -3,7 +3,7 @@ import { formatDuration, formatDate } from '../utils/format'
 import { resolveDef } from '../data/activityDefs'
 import '../styles/pgcr.css'
 
-export default function PgcrDetail({ instanceId, onBack }) {
+export default function PgcrDetail({ instanceId, onBack, onSearchPlayer }) {
   const [state, setState] = useState('loading') // loading | done | error
   const [pgcr, setPgcr] = useState(null)
   const [error, setError] = useState('')
@@ -94,7 +94,17 @@ export default function PgcrDetail({ instanceId, onBack }) {
                 <tr key={`${p.membershipId}-${p.characterId}-${i}`}>
                   <td className="pgcr-name">
                     {p.emblem && <img className="pgcr-emblem" src={p.emblem} alt="" />}
-                    <span>{p.name}</span>
+                    {onSearchPlayer && p.name ? (
+                      <button
+                        className="pgcr-name-btn"
+                        onClick={() => onSearchPlayer(p.name)}
+                        title={`Find all runs with ${p.name}`}
+                      >
+                        {p.name}
+                      </button>
+                    ) : (
+                      <span>{p.name}</span>
+                    )}
                   </td>
                   <td>{p.className}</td>
                   <td>{p.completed ? '✓' : '—'}</td>

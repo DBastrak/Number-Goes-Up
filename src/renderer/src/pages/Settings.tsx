@@ -158,7 +158,7 @@ export default function Settings() {
         </Row>
         <Row
           label="Background image"
-          hint="Pick your own image or GIF (PNG, JPG, GIF, WebP — max 30 MB). Defaults to the cat."
+          hint="Pick your own image or GIF — the UI colours are pulled from it. (PNG, JPG, GIF, WebP, max 30 MB.)"
         >
           <div className="wallpaper-bg-controls">
             <button type="button" className="wallpaper-bg-btn" onClick={pickWallpaperBg}>

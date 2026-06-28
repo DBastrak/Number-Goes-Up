@@ -100,3 +100,17 @@
   border-radius: 4px;
   flex: 0 0 auto;
 }
+.pgcr-name-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+}
+.pgcr-name-btn:hover {
+  color: var(--text-bright);
+  text-decoration: underline;
+}

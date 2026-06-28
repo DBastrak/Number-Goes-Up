@@ -13,12 +13,26 @@ const TEAM_FILTERS = [
   { id: 'trio', label: 'Trio', count: 3, title: 'Raids only' }
 ]
 
-export default function Activity({ activities = [], state = 'idle', error = '', onOpen }) {
+const CLEAR_FILTERS = [
+  { id: 'all', label: 'Any' },
+  { id: 'full', label: 'Full', title: 'Completed from the start' },
+  { id: 'checkpoint', label: 'Checkpoint', title: 'Completed from a checkpoint' },
+  { id: 'incomplete', label: 'Incomplete', title: 'Not completed' }
+]
+
+export default function Activity({
+  activities = [],
+  state = 'idle',
+  error = '',
+  onOpen,
+  playerQuery = '',
+  onPlayerQuery
+}) {
   const [limit, setLimit] = useState(PAGE_SIZE)
   const [activityFilter, setActivityFilter] = useState('all')
   const [teamFilter, setTeamFilter] = useState('all')
   const [flawlessOnly, setFlawlessOnly] = useState(false)
-  const [completedOnly, setCompletedOnly] = useState(false)
+  const [clearType, setClearType] = useState('all') // all | full | checkpoint | incomplete
 
   const hideIncomplete = loadUiPref().hideIncomplete
 
@@ -29,27 +43,39 @@ export default function Activity({ activities = [], state = 'idle', error = '', 
     return [...set].sort()
   }, [activities])
 
+  const playerSearch = playerQuery.trim().toLowerCase()
   const filtersActive =
-    activityFilter !== 'all' || teamFilter !== 'all' || flawlessOnly || completedOnly
+    activityFilter !== 'all' ||
+    teamFilter !== 'all' ||
+    flawlessOnly ||
+    clearType !== 'all' ||
+    !!playerSearch
 
   const visible = useMemo(() => {
     const teamCount = TEAM_FILTERS.find((t) => t.id === teamFilter)?.count
     return activities.filter((a) => {
-      if (hideIncomplete && !a.completed) return false
-      if (completedOnly && !a.completed) return false
+      // Clear type: full = fresh clear, checkpoint = completed but not fresh, incomplete.
+      if (clearType === 'full' && !(a.completed && a.fresh)) return false
+      if (clearType === 'checkpoint' && !(a.completed && !a.fresh)) return false
+      if (clearType === 'incomplete' && a.completed) return false
+      // Respect the global "hide incomplete" pref, unless explicitly viewing incomplete.
+      if (hideIncomplete && clearType !== 'incomplete' && !a.completed) return false
       if (activityFilter !== 'all' && a.activityName !== activityFilter) return false
       if (flawlessOnly && !a.flawless) return false
       if (teamCount && a.playerCount !== teamCount) return false
       // A "trio" is only a flex in raids (dungeons are 3-player by default).
       if (teamFilter === 'trio' && a.mode !== 'raid') return false
+      // Guardian search — match any fireteam member's name (from the run's PGCR).
+      if (playerSearch && !a.players?.some((n) => n.toLowerCase().includes(playerSearch)))
+        return false
       return true
     })
-  }, [activities, hideIncomplete, completedOnly, activityFilter, flawlessOnly, teamFilter])
+  }, [activities, hideIncomplete, clearType, activityFilter, flawlessOnly, teamFilter, playerSearch])
 
   // Reset pagination whenever the filters change.
   useEffect(() => {
     setLimit(PAGE_SIZE)
-  }, [activityFilter, teamFilter, flawlessOnly, completedOnly])
+  }, [activityFilter, teamFilter, flawlessOnly, clearType, playerSearch])
 
   const shown = visible.slice(0, limit)
 
@@ -81,6 +107,15 @@ export default function Activity({ activities = [], state = 'idle', error = '', 
             ))}
           </select>
 
+          <input
+            className="run-filter-search"
+            type="search"
+            placeholder="Search Guardian…"
+            value={playerQuery}
+            onChange={(e) => onPlayerQuery?.(e.target.value)}
+            title="Show runs that included a Guardian whose name contains this text"
+          />
+
           <div className="run-filter-chips">
             {TEAM_FILTERS.map((t) => (
               <button
@@ -94,20 +129,25 @@ export default function Activity({ activities = [], state = 'idle', error = '', 
             ))}
           </div>
 
+          <div className="run-filter-chips">
+            {CLEAR_FILTERS.map((c) => (
+              <button
+                key={c.id}
+                className={`run-chip ${clearType === c.id ? 'is-active' : ''}`}
+                onClick={() => setClearType(c.id)}
+                title={c.title}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+
           <button
             className={`run-chip ${flawlessOnly ? 'is-active' : ''}`}
             onClick={() => setFlawlessOnly((v) => !v)}
           >
             ✦ Flawless
           </button>
-          {!hideIncomplete && (
-            <button
-              className={`run-chip ${completedOnly ? 'is-active' : ''}`}
-              onClick={() => setCompletedOnly((v) => !v)}
-            >
-              ✓ Completed
-            </button>
-          )}
           {filtersActive && (
             <button
               className="run-chip run-chip-clear"
@@ -115,7 +155,8 @@ export default function Activity({ activities = [], state = 'idle', error = '', 
                 setActivityFilter('all')
                 setTeamFilter('all')
                 setFlawlessOnly(false)
-                setCompletedOnly(false)
+                setClearType('all')
+                onPlayerQuery?.('')
               }}
             >
               Clear

@@ -154,9 +154,16 @@
 html.is-wallpaper .app-shell {
   background: transparent;
 }
+/* Translucent bar tinted by the active accent (which, with a custom wallpaper, is taken
+   from the image) over a dark scrim so the nav text stays readable on top of the art. */
 html.is-wallpaper .topnav {
-  background: linear-gradient(90deg, rgba(26, 8, 22, 0.85) 0%, rgba(46, 14, 38, 0.68) 100%);
-  backdrop-filter: blur(4px);
+  background-color: rgba(8, 9, 13, 0.55);
+  background-image: linear-gradient(
+    90deg,
+    rgba(var(--accent-rgb), 0.3) 0%,
+    rgba(var(--accent-rgb), 0.12) 100%
+  );
+  backdrop-filter: blur(6px);
 }
 
 /* ---- Refresh button ---- */

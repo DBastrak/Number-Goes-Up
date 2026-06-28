@@ -405,10 +405,17 @@ app.whenReady().then(() => {
       if (statSync(src).size > WALLPAPER_MAX_BYTES) {
         return { ok: false, error: 'Image is too large (max 30 MB).' }
       }
-      const dest = join(app.getPath('userData'), `wallpaper-bg${ext}`)
-      // Drop any previous copy (it may have had a different extension).
+      // Unique filename per pick so the path always changes — defeats any path-based
+      // caching/locking that could leave the old image showing after a re-pick.
+      const dest = join(app.getPath('userData'), `wallpaper-bg-${Date.now()}${ext}`)
       const prev = readWallpaperConfig()
-      if (prev.file && prev.file !== dest && existsSync(prev.file)) rmSync(prev.file, { force: true })
+      if (prev.file && existsSync(prev.file)) {
+        try {
+          rmSync(prev.file, { force: true })
+        } catch {
+          /* ignore */
+        }
+      }
       copyFileSync(src, dest)
       const name = src.split(/[\\/]/).pop()
       saveWallpaperConfig({ type: 'custom', file: dest, name })

@@ -40,6 +40,8 @@ export default function App() {
   const [activitiesError, setActivitiesError] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const [selectedInstance, setSelectedInstance] = useState(null)
+  // Guardian search for Recent Runs (lifted so a PGCR player click can drive it).
+  const [runPlayerQuery, setRunPlayerQuery] = useState('')
 
   // Followed-user new-clear notifications. Baseline = app launch time; only clears that
   // happen after launch are shown. "Clear" advances the baseline to now.
@@ -162,6 +164,12 @@ export default function App() {
     setPage('pgcr')
   }
 
+  // Jump to Recent Runs filtered to a Guardian (clicked from a PGCR report).
+  function searchPlayerRuns(name) {
+    setRunPlayerQuery(name)
+    setPage('activity')
+  }
+
   async function handleLogout() {
     await window.api?.logout?.()
     setUser(null)
@@ -237,6 +245,8 @@ export default function App() {
               state={activitiesState}
               error={activitiesError}
               onOpen={openPgcr}
+              playerQuery={runPlayerQuery}
+              onPlayerQuery={setRunPlayerQuery}
             />
           )}
           {page === 'live' && <LiveActivity />}
@@ -244,7 +254,11 @@ export default function App() {
           {page === 'bingo' && <Bingo />}
           {page === 'settings' && <Settings />}
           {page === 'pgcr' && (
-            <PgcrDetail instanceId={selectedInstance} onBack={() => setPage('activity')} />
+            <PgcrDetail
+              instanceId={selectedInstance}
+              onBack={() => setPage('activity')}
+              onSearchPlayer={searchPlayerRuns}
+            />
           )}
         </ErrorBoundary>
       </main>

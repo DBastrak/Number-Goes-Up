@@ -51,7 +51,10 @@ const SURFACE_BASE: Record<string, [string, number]> = {
   '--border': ['#243140', 0.2]
 }
 
-function setVars({ accent, accent2, teal }) {
+// surfaceTint scales how strongly the backgrounds/panels/borders lean toward the accent.
+// 1 = the subtle default used by the colour themes; wallpaper mode bumps it so the whole
+// UI clearly carries the image's colour.
+function setVars({ accent, accent2, teal }, surfaceTint = 1) {
   const root = document.documentElement
   root.style.setProperty('--accent', accent)
   const { r, g, b } = hexToRgb(accent)
@@ -60,7 +63,7 @@ function setVars({ accent, accent2, teal }) {
   if (accent2) root.style.setProperty('--accent-2', accent2)
   if (teal) root.style.setProperty('--teal', teal)
   for (const [name, [base, t]] of Object.entries(SURFACE_BASE)) {
-    root.style.setProperty(name, mix(base, accent, t))
+    root.style.setProperty(name, mix(base, accent, Math.min(1, t * surfaceTint)))
   }
 }
 
@@ -68,8 +71,8 @@ export function applyTheme(theme) {
   setVars(theme)
 }
 
-export function applyAccent(hex) {
-  setVars({ accent: hex, accent2: shade(hex, -0.2), teal: shade(hex, 0.15) })
+export function applyAccent(hex, surfaceTint = 1) {
+  setVars({ accent: hex, accent2: shade(hex, -0.2), teal: shade(hex, 0.15) }, surfaceTint)
 }
 
 // --- Persistence (client-only, localStorage) ---
@@ -112,6 +115,9 @@ export function applyStoredTheme() {
 // --- Wallpaper theme: pink palette + anime cat wallpaper (a fun override toggle) ---
 const WALLPAPER_KEY = 'sr-wallpaper'
 const WALLPAPER = { accent: '#ff8fd1', accent2: '#ff5fb0', teal: '#ffd0ec' }
+// Wallpaper mode tints surfaces harder than the colour themes so the image's colour
+// reads across the whole UI (panels, cards, borders), not just the accents.
+const WALLPAPER_TINT = 2
 
 export function loadWallpaper() {
   try {
@@ -137,7 +143,7 @@ export function applyWallpaper(on) {
     // Show the bundled gif immediately, then swap in the user's custom image if set.
     root.style.setProperty('--wallpaper-bg', `url(${wallpaperGif})`)
     root.classList.add('is-wallpaper')
-    setVars(WALLPAPER)
+    setVars(WALLPAPER, WALLPAPER_TINT)
     refreshWallpaperBg()
   } else {
     root.classList.remove('is-wallpaper')
@@ -148,8 +154,68 @@ export function applyWallpaper(on) {
   window.dispatchEvent(new CustomEvent('wallpaper-change', { detail: !!on }))
 }
 
+// Brighten/saturate an averaged colour so it reads as an accent on the dark UI.
+function normalizeAccent(r, g, b) {
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  if (lum < 0.5) {
+    const f = 0.5 / Math.max(lum, 0.05)
+    r = Math.min(255, r * f)
+    g = Math.min(255, g * f)
+    b = Math.min(255, b * f)
+  }
+  return rgbToHex(r, g, b)
+}
+
+// Pull the dominant *vibrant* colour out of an image (data URL) to use as the UI accent.
+// Resolves to a hex string, or null if nothing colourful enough is found (e.g. greyscale).
+function extractAccentFromImage(dataUrl: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      try {
+        const S = 64 // downscale for speed; first frame of a gif is fine
+        const canvas = document.createElement('canvas')
+        canvas.width = S
+        canvas.height = S
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return resolve(null)
+        ctx.drawImage(img, 0, 0, S, S)
+        const { data } = ctx.getImageData(0, 0, S, S)
+        const buckets = new Map<string, { n: number; r: number; g: number; b: number }>()
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i]
+          const g = data[i + 1]
+          const b = data[i + 2]
+          if (data[i + 3] < 200) continue // skip transparent
+          const max = Math.max(r, g, b)
+          const min = Math.min(r, g, b)
+          const sat = max === 0 ? 0 : (max - min) / max
+          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+          if (sat < 0.25 || lum < 0.12 || lum > 0.95) continue // skip greys / near-black / near-white
+          const key = `${r >> 5}-${g >> 5}-${b >> 5}` // quantise into 8 buckets per channel
+          const e = buckets.get(key) || { n: 0, r: 0, g: 0, b: 0 }
+          e.n++
+          e.r += r
+          e.g += g
+          e.b += b
+          buckets.set(key, e)
+        }
+        let best: { n: number; r: number; g: number; b: number } | null = null
+        for (const e of buckets.values()) if (!best || e.n > best.n) best = e
+        if (!best) return resolve(null)
+        resolve(normalizeAccent(best.r / best.n, best.g / best.n, best.b / best.n))
+      } catch {
+        resolve(null)
+      }
+    }
+    img.onerror = () => resolve(null)
+    img.src = dataUrl
+  })
+}
+
 // Point --wallpaper-bg at the user's chosen image (a data URL from the main process) if one
-// is set, otherwise the bundled cat gif. Call after the choice changes.
+// is set, otherwise the bundled cat gif. For a custom image the UI accent is derived from
+// its dominant colour; the bundled cat falls back to the pink palette. Call after a change.
 export async function refreshWallpaperBg() {
   const root = document.documentElement
   try {
@@ -160,6 +226,9 @@ export async function refreshWallpaperBg() {
       root.style.setProperty('--wallpaper-bg', `url("${res.dataUrl}")`)
       root.style.setProperty('--wallpaper-size', 'cover')
       root.style.setProperty('--wallpaper-repeat', 'no-repeat')
+      const accent = await extractAccentFromImage(res.dataUrl)
+      if (accent) applyAccent(accent, WALLPAPER_TINT)
+      else setVars(WALLPAPER, WALLPAPER_TINT)
       return
     }
   } catch {
@@ -169,6 +238,7 @@ export async function refreshWallpaperBg() {
   root.style.setProperty('--wallpaper-bg', `url(${wallpaperGif})`)
   root.style.setProperty('--wallpaper-size', '240px auto')
   root.style.setProperty('--wallpaper-repeat', 'repeat')
+  setVars(WALLPAPER, WALLPAPER_TINT)
 }
 
 // --- Interface preferences (run filters) ---

@@ -455,14 +455,16 @@ async function mapPool(items, limit, fn) {
   await Promise.all(workers)
 }
 
-// Enrich completed activities with PGCR-derived fields (fresh / teamDeaths / flawless).
-// `cache` maps instanceId -> { fresh, flawless, teamDeaths } and is mutated for reuse.
+// Enrich completed activities with PGCR-derived fields (fresh / teamDeaths / flawless) +
+// the fireteam's Guardian names (for "search by player" in Recent Runs).
+// `cache` maps instanceId -> { flag, spi, period, teamDeaths, players } and is mutated for
+// reuse. Entries cached before player-name support get re-fetched once to backfill names.
 export async function enrichActivities(activities, cache = {}) {
   const targets = activities.filter((a) => a.completed && a.instanceId)
   let fetched = 0
   let failed = 0
 
-  // Apply a cache record (raw freshness inputs) to an activity.
+  // Apply a cache record (raw freshness inputs + player names) to an activity.
   const apply = (a, rec) => {
     a.teamDeaths = rec.teamDeaths
     a.flawless = rec.teamDeaths === 0
@@ -471,14 +473,23 @@ export async function enrichActivities(activities, cache = {}) {
       activityWasStartedFromBeginning: rec.flag,
       startingPhaseIndex: rec.spi
     })
+    if (rec.players) a.players = rec.players
   }
 
-  await mapPool(targets, 4, async (a) => {
+  // Apply whatever's cached, then fetch anything missing — including older cache entries
+  // that predate player names (so the names get backfilled on the next load).
+  const toFetch = []
+  for (const a of targets) {
     const hit = cache[a.instanceId]
     if (hit) {
       apply(a, hit)
-      return
+      if (!hit.players) toFetch.push(a)
+    } else {
+      toFetch.push(a)
     }
+  }
+
+  await mapPool(toFetch, 4, async (a) => {
     try {
       const r = await getPostGameCarnageReport(a.instanceId)
       if (!r) {
@@ -489,7 +500,8 @@ export async function enrichActivities(activities, cache = {}) {
         flag: r.activityWasStartedFromBeginning,
         spi: r.startingPhaseIndex,
         period: r.period,
-        teamDeaths: r.teamDeaths
+        teamDeaths: r.teamDeaths,
+        players: (r.players || []).map((p) => p.name).filter(Boolean)
       }
       cache[a.instanceId] = rec
       apply(a, rec)
