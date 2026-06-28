@@ -1,0 +1,31 @@
+/* Full-monitor transparent jumpscare window — only foxy is visible. */
+html,
+body,
+#root {
+  background: transparent !important;
+  margin: 0;
+  overflow: hidden;
+}
+
+.jumpscare {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.jumpscare-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.jumpscare-gif {
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  /* Drop the gif's black background to transparent (see filter in Jumpscare.tsx). */
+  filter: url(#foxy-key);
+}

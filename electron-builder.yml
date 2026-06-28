@@ -1,0 +1,32 @@
+appId: com.numbergoup.app
+productName: number go up
+directories:
+  output: dist
+  buildResources: build
+# Auto-update source. Releases (installer + latest.yml) are published to GitHub Releases;
+# the installed app reads them from here. REPLACE owner/repo with your public repo.
+publish:
+  provider: github
+  owner: YOUR_GITHUB_USERNAME
+  repo: YOUR_REPO_NAME
+# electron-vite outputs the bundled app to out/; package that plus package.json.
+files:
+  - out/**/*
+  - package.json
+# Ship the Bungie API key file alongside the app (env.js looks in the resources dir too).
+extraResources:
+  - from: .env
+    to: .env
+asar: true
+win:
+  target:
+    - nsis
+    - portable
+  icon: build/icon.ico
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: number go up

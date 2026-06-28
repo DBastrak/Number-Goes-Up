@@ -1,0 +1,102 @@
+.pgcr {
+  position: relative;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 24px 28px;
+}
+
+/* Full activity art behind the whole report, dimmed to 50%. */
+.pgcr-backdrop {
+  position: fixed;
+  top: 56px; /* below the top nav */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+  pointer-events: none;
+}
+.pgcr > *:not(.pgcr-backdrop) {
+  position: relative;
+  z-index: 1;
+}
+
+.pgcr-back {
+  background: transparent;
+  border: none;
+  color: var(--accent);
+  font-size: 14px;
+  padding: 4px 0;
+  margin-bottom: 14px;
+}
+.pgcr-back:hover {
+  color: var(--text-bright);
+}
+
+.pgcr-header {
+  margin-bottom: 18px;
+}
+.pgcr-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 6px;
+  color: var(--text-bright);
+  font-size: 22px;
+}
+.pgcr-mode {
+  text-transform: capitalize;
+}
+.pgcr-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.pgcr-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(11, 16, 23, 0.5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.pgcr-table th,
+.pgcr-table td {
+  padding: 10px 12px;
+  text-align: left;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+.pgcr-table th {
+  background: rgba(11, 16, 23, 0.55);
+  color: var(--text-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.pgcr-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.pgcr-table tbody tr:hover {
+  background: rgba(var(--accent-rgb), 0.05);
+}
+.pgcr-name {
+  color: var(--accent);
+  font-weight: 600;
+}
+.pgcr-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pgcr-emblem {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}

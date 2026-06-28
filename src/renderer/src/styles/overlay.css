@@ -1,0 +1,164 @@
+/* Transparent overlay window — only the timer pill is visible. */
+html,
+body,
+#root {
+  background: transparent !important;
+  margin: 0;
+  overflow: hidden;
+}
+
+.overlay {
+  display: flex;
+  padding: 0;
+}
+.overlay-hidden {
+  display: none;
+}
+
+/* Text alignment — 'auto' resolves to the nearer screen edge in the renderer, otherwise
+   it's the user's explicit Settings choice. Right-align moves the pin to the opposite
+   corner so it never sits over the text. */
+.overlay.align-left {
+  justify-content: flex-start;
+}
+.overlay.align-center {
+  justify-content: center;
+}
+.overlay.align-right {
+  justify-content: flex-end;
+}
+.overlay.align-left .overlay-card {
+  align-items: flex-start;
+  text-align: left;
+}
+.overlay.align-center .overlay-card {
+  align-items: center;
+  text-align: center;
+}
+.overlay.align-right .overlay-card {
+  align-items: flex-end;
+  text-align: right;
+}
+.overlay.align-right .overlay-pin {
+  right: auto;
+  left: 4px;
+}
+.overlay.align-right .overlay-hint {
+  padding-right: 0;
+  padding-left: 24px;
+}
+
+/* Daily clear counter line. */
+.overlay-today {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-top: 3px;
+}
+.overlay.align-center .overlay-today {
+  justify-content: center;
+}
+.overlay.align-right .overlay-today {
+  justify-content: flex-end;
+}
+.overlay-today-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9fb4c6;
+}
+.overlay-today-value {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4);
+}
+
+.overlay-card {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(8, 12, 20, 0.45);
+  border: 1px solid rgba(var(--accent-rgb), 0.28);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  -webkit-app-region: no-drag;
+}
+/* Wallpaper on: the card shows the (custom or default) wallpaper background, filling the card
+   via cover and cropping overflow, dimmed so the timer stays legible. */
+html.is-wallpaper .overlay-card {
+  background-image:
+    linear-gradient(rgba(22, 6, 18, 0.55), rgba(22, 6, 18, 0.62)),
+    var(--wallpaper-bg);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  border-color: rgba(var(--accent-rgb), 0.5);
+}
+/* Unlocked: the whole card becomes the OS drag handle. */
+.overlay-card.is-draggable {
+  -webkit-app-region: drag;
+  cursor: move;
+  outline: 1px dashed rgba(var(--accent-rgb), 0.7);
+  outline-offset: 2px;
+}
+
+/* Pin toggle. Always clickable (no-drag) even when the card is a drag region. */
+.overlay-pin {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: rgba(8, 12, 20, 0.55);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.45;
+  -webkit-app-region: no-drag;
+  transition: opacity 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.overlay-pin:hover {
+  opacity: 1;
+}
+.overlay-pin.is-unlocked {
+  opacity: 1;
+  background: rgba(var(--accent-rgb), 0.25);
+  box-shadow: 0 0 0 1px rgba(var(--accent-rgb), 0.6);
+}
+.overlay-hint {
+  font-size: 11px;
+  font-weight: 600;
+  color: #9fb4c6;
+  white-space: nowrap;
+  padding-right: 24px;
+}
+.overlay-timer {
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5);
+}
+.overlay-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #e6edf3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9);
+}

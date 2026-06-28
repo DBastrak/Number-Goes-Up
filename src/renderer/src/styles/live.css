@@ -1,0 +1,269 @@
+.live {
+  position: relative;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 16px 28px;
+}
+
+/* Full activity art behind the entire tab, dimmed to 50%. */
+.live-backdrop {
+  position: fixed;
+  top: 56px; /* below the top nav */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 0;
+  pointer-events: none;
+}
+/* Orbit / menus: a starfield + nebula instead of an activity image. */
+.live-backdrop.is-orbit {
+  background-color: #05070f;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 22%, #ffffff, transparent),
+    radial-gradient(1.5px 1.5px at 78% 14%, #cfe0ff, transparent),
+    radial-gradient(1px 1px at 35% 60%, #ffffff, transparent),
+    radial-gradient(1px 1px at 62% 48%, #bcd0ff, transparent),
+    radial-gradient(1.5px 1.5px at 88% 72%, #ffffff, transparent),
+    radial-gradient(1px 1px at 22% 82%, #e6ecff, transparent),
+    radial-gradient(1px 1px at 50% 30%, #ffffff, transparent),
+    radial-gradient(1px 1px at 8% 55%, #cfe0ff, transparent),
+    radial-gradient(900px 500px at 75% 18%, rgba(80, 60, 160, 0.28), transparent 70%),
+    radial-gradient(700px 500px at 18% 80%, rgba(40, 90, 170, 0.25), transparent 70%),
+    linear-gradient(180deg, #060913 0%, #0a1024 100%);
+}
+.live > *:not(.live-backdrop) {
+  position: relative;
+  z-index: 1;
+}
+
+.live-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.live-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--text-bright);
+  font-size: 22px;
+}
+.live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-dim);
+}
+.live-dot.is-on {
+  background: #51cf66;
+  box-shadow: 0 0 8px #51cf66;
+  animation: live-pulse 1.5s ease-in-out infinite;
+}
+@keyframes live-pulse {
+  50% {
+    opacity: 0.4;
+  }
+}
+.live-poll {
+  color: var(--text-dim);
+  font-size: 12px;
+}
+
+/* ---- Idle ---- */
+.live-idle {
+  text-align: center;
+  padding: 60px 20px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.live-idle-icon {
+  font-size: 40px;
+}
+.live-idle-title {
+  margin: 14px 0 4px;
+  color: var(--text-bright);
+  font-size: 18px;
+  font-weight: 600;
+}
+.live-idle-sub {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* ---- Live activity card ---- */
+.live-card {
+  background: rgba(11, 16, 23, 0.5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+.live-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.live-class {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.live-activity-name {
+  margin: 2px 0 8px;
+  color: var(--text-bright);
+  font-size: 23px;
+}
+.live-timer {
+  font-size: 42px;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.live-timer-label {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-dim);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* ---- Sections ---- */
+.live-section {
+  margin-bottom: 14px;
+}
+.live-section-title {
+  margin: 0 0 8px;
+  color: var(--text-dim);
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.live-muted {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.loadout-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+.loadout-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(11, 16, 23, 0.5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+.loadout-item.is-exotic {
+  border-color: #c8a24a;
+  background: rgba(206, 174, 51, 0.08);
+}
+.loadout-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+.loadout-name {
+  color: var(--text-bright);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ---- Fireteam ---- */
+.fireteam-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.fireteam-member {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  background: rgba(11, 16, 23, 0.5);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+.fireteam-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: var(--bg-3);
+  color: var(--text-bright);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+.fireteam-emblem {
+  width: 48px;
+  align-self: stretch;
+  height: auto;
+  object-fit: cover;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+.live-orbit {
+  font-size: 30px;
+  color: var(--text-dim);
+}
+.fireteam-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.fireteam-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-bright);
+  font-weight: 600;
+}
+.fireteam-you {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.14);
+  border-radius: 8px;
+  padding: 1px 6px;
+}
+.fireteam-loadout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.ft-item {
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: var(--bg-0);
+}
+.ft-item.is-exotic {
+  border-color: #c8a24a;
+  box-shadow: 0 0 0 1px rgba(206, 174, 51, 0.35);
+}

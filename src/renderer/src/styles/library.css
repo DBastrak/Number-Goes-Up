@@ -1,0 +1,414 @@
+/* ---- Stats page (Activities tab) ---- */
+.stats-page {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 24px 28px;
+}
+.stats-page-header {
+  margin-bottom: 20px;
+}
+.stats-page-heading {
+  margin: 0;
+  color: var(--text-bright);
+  font-size: 22px;
+}
+.stats-page-sub {
+  margin: 4px 0 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* ---- Raid/Dungeon accordion section ---- */
+.accordion-section {
+  margin-bottom: 22px;
+}
+.accordion-item.is-empty {
+  opacity: 0.5;
+}
+.encounter-row.is-sub .encounter-name {
+  padding-left: 12px;
+  color: var(--text-dim);
+  text-transform: capitalize;
+}
+.detail-flag {
+  margin-left: 8px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.12);
+  border-radius: 8px;
+  padding: 1px 6px;
+}
+
+/* ---- Stats by class ---- */
+.class-stats {
+  margin-bottom: 22px;
+}
+.class-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.class-table th,
+.class-table td {
+  padding: 10px 14px;
+  text-align: left;
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+.class-table th {
+  background: var(--panel);
+  color: var(--text-dim);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.class-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.class-table tbody tr:hover {
+  background: rgba(var(--accent-rgb), 0.05);
+}
+.class-name {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ---- Unmatched activities report ---- */
+.unmatched-note {
+  background: var(--panel);
+  border: 1px solid #5a4a2a;
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 22px;
+}
+.unmatched-list {
+  margin: 10px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--text);
+}
+.unmatched-list li {
+  margin: 4px 0;
+}
+.unmatched-list code {
+  color: var(--accent);
+  background: var(--bg-0);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+.library {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  height: 100%;
+}
+
+/* ---- Sidebar (sections) ---- */
+.library-sidebar {
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 16px 12px;
+  overflow: auto;
+}
+.library-search input {
+  width: 100%;
+  margin-bottom: 12px;
+}
+.library-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.library-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  padding: 9px 12px;
+  border-radius: 4px;
+  text-align: left;
+  font-size: 14px;
+  transition: background 0.12s, color 0.12s;
+}
+.library-section:hover {
+  background: var(--bg-2);
+  color: var(--text-bright);
+}
+.library-section.is-active {
+  background: linear-gradient(90deg, var(--bg-3) 0%, var(--bg-2) 100%);
+  color: var(--text-bright);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.library-section-count {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* ---- Main panel ---- */
+.library-main {
+  padding: 24px 28px;
+  overflow: auto;
+}
+.library-header {
+  margin-bottom: 18px;
+}
+.library-heading {
+  margin: 0;
+  color: var(--text-bright);
+  font-size: 22px;
+}
+.library-subheading {
+  margin: 4px 0 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+.library-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.stat-card {
+  background: linear-gradient(180deg, var(--panel-2) 0%, var(--panel) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.stat-card-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+.stat-card-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+
+/* ---- Accordion (raid / dungeon → encounters) ---- */
+.activity-accordion {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.accordion-item {
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.12s;
+}
+.accordion-item.has-bg {
+  background-size: cover;
+  background-position: center 35%;
+  background-repeat: no-repeat;
+}
+.accordion-item.is-open {
+  border-color: var(--accent);
+}
+.accordion-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  min-height: 96px;
+  background: transparent;
+  border: none;
+  padding: 18px 20px;
+  text-align: left;
+  color: inherit;
+  transition: background 0.12s, filter 0.12s;
+}
+.accordion-head:hover {
+  background: rgba(var(--accent-rgb), 0.06);
+}
+.accordion-item.has-bg .accordion-title,
+.accordion-item.has-bg .accordion-summary {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+}
+.accordion-item.has-bg .accordion-head:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.accordion-item.has-bg .accordion-panel {
+  background: rgba(11, 16, 23, 0.62);
+}
+.accordion-art {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 auto;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--bg-3), var(--bg-2));
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+}
+.has-bg .accordion-art {
+  background: rgba(11, 16, 23, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.accordion-titlewrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.accordion-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.accordion-summary {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.accordion-summary .dim {
+  color: var(--text-dim);
+}
+.accordion-chevron {
+  color: var(--text-dim);
+  transition: transform 0.18s;
+}
+.accordion-chevron.is-open {
+  transform: rotate(180deg);
+  color: var(--accent);
+}
+
+.accordion-panel {
+  border-top: 1px solid var(--border);
+  background: var(--panel);
+  padding: 6px 16px 10px;
+}
+.encounter-row {
+  display: grid;
+  grid-template-columns: 1fr 80px 80px;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(42, 63, 84, 0.5);
+  font-size: 13px;
+}
+.encounter-row:last-child {
+  border-bottom: none;
+}
+.encounter-head {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+.encounter-name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-bright);
+}
+.encounter-index {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--bg-3);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+.encounter-row .dim {
+  color: var(--text-dim);
+}
+
+.library-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+.game-card {
+  display: flex;
+  gap: 12px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  transition: transform 0.12s, border-color 0.12s;
+}
+.game-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+.game-card-art {
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  border-radius: 4px;
+  background: linear-gradient(135deg, var(--bg-3), var(--bg-2));
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+.game-card-body {
+  flex: 1;
+  min-width: 0;
+}
+.game-card-tophead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.game-card-title {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-bright);
+}
+
+/* Raid / Dungeon type tags (shared with activity feed) */
+.activity-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+.tag-raid {
+  background: rgba(var(--accent-rgb), 0.18);
+  color: var(--accent);
+}
+.tag-dungeon {
+  background: rgba(75, 194, 168, 0.18);
+  color: var(--teal);
+}
+.game-card-meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text);
+}
+.game-card-meta.dim {
+  color: var(--text-dim);
+}

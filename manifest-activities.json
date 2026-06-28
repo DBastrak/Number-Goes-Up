@@ -1,0 +1,604 @@
+[
+ {
+  "hash": 89727599,
+  "name": "Leviathan",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 107319834,
+  "name": "Crota's End: Standard",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Crota's End"
+ },
+ {
+  "hash": 119944200,
+  "name": "Leviathan, Spire of Stars: Normal",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan, Spire of Stars"
+ },
+ {
+  "hash": 156253568,
+  "name": "Crota's End: Legend",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Crota's End"
+ },
+ {
+  "hash": 287649202,
+  "name": "Leviathan",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 313828469,
+  "name": "Ghosts of the Deep: Standard",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Ghosts of the Deep"
+ },
+ {
+  "hash": 417231112,
+  "name": "Leviathan: Prestige",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 508802457,
+  "name": "Leviathan: Prestige",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 548750096,
+  "name": "Scourge of the Past",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Scourge of the Past"
+ },
+ {
+  "hash": 757116822,
+  "name": "Leviathan: Prestige",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 771164842,
+  "name": "Leviathan: Prestige",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 785700673,
+  "name": "Pit of Heresy: Master",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Pit of Heresy"
+ },
+ {
+  "hash": 785700678,
+  "name": "Pit of Heresy: Expert",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Pit of Heresy"
+ },
+ {
+  "hash": 809170886,
+  "name": "Leviathan, Eater of Worlds: Prestige",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan, Eater of Worlds"
+ },
+ {
+  "hash": 910380154,
+  "name": "Deep Stone Crypt",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Deep Stone Crypt"
+ },
+ {
+  "hash": 940375169,
+  "name": "Salvation's Edge: Standard",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Salvation's Edge"
+ },
+ {
+  "hash": 960175301,
+  "name": "Crown of Sorrow: Normal",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Crown of Sorrow"
+ },
+ {
+  "hash": 1042180643,
+  "name": "Garden of Salvation",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Garden of Salvation"
+ },
+ {
+  "hash": 1063970578,
+  "name": "King's Fall: Expert",
+  "type": "raid",
+  "direct": 4,
+  "orig": "King's Fall"
+ },
+ {
+  "hash": 1077850348,
+  "name": "Prophecy",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Prophecy"
+ },
+ {
+  "hash": 1112917203,
+  "name": "Grasp of Avarice: Master",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Grasp of Avarice"
+ },
+ {
+  "hash": 1262462921,
+  "name": "Spire of the Watcher: Standard",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Spire of the Watcher"
+ },
+ {
+  "hash": 1374392663,
+  "name": "King's Fall: Standard",
+  "type": "raid",
+  "direct": 4,
+  "orig": "King's Fall"
+ },
+ {
+  "hash": 1375089621,
+  "name": "Pit of Heresy: Normal",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Pit of Heresy"
+ },
+ {
+  "hash": 1441982566,
+  "name": "Vow of the Disciple: Standard",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Vow of the Disciple"
+ },
+ {
+  "hash": 1485585878,
+  "name": "Vault of Glass: Challenge Mode",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Vault of Glass: Challenge Mode"
+ },
+ {
+  "hash": 1507509200,
+  "name": "Crota's End: Master",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Crota's End"
+ },
+ {
+  "hash": 1541433876,
+  "name": "Salvation's Edge: Standard",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Salvation's Edge"
+ },
+ {
+  "hash": 1566480315,
+  "name": "Crota's End: Standard",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Crota's End"
+ },
+ {
+  "hash": 1661734046,
+  "name": "Last Wish: Normal",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Last Wish"
+ },
+ {
+  "hash": 1685065161,
+  "name": "Leviathan: Prestige",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 1699948563,
+  "name": "Leviathan",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 1754635208,
+  "name": "Equilibrium: Contest",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Equilibrium"
+ },
+ {
+  "hash": 1800508819,
+  "name": "Leviathan: Prestige",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 1875726950,
+  "name": "Leviathan",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 2004855007,
+  "name": "Warlord's Ruin: Standard",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Warlord's Ruin"
+ },
+ {
+  "hash": 2032534090,
+  "name": "The Shattered Throne",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "The Shattered Throne"
+ },
+ {
+  "hash": 2122313384,
+  "name": "Last Wish: Standard",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Last Wish"
+ },
+ {
+  "hash": 2164432138,
+  "name": "Leviathan, Eater of Worlds",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan, Eater of Worlds"
+ },
+ {
+  "hash": 2192826039,
+  "name": "Salvation's Edge",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Salvation's Edge"
+ },
+ {
+  "hash": 2214608156,
+  "name": "Last Wish: Level 58",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Last Wish"
+ },
+ {
+  "hash": 2214608157,
+  "name": "Last Wish: Level 55",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Last Wish"
+ },
+ {
+  "hash": 2296818662,
+  "name": "Spire of the Watcher: Master",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Spire of the Watcher"
+ },
+ {
+  "hash": 2381413764,
+  "name": "Root of Nightmares: Standard",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Root of Nightmares"
+ },
+ {
+  "hash": 2449714930,
+  "name": "Leviathan: Prestige",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 2534833093,
+  "name": "Warlord's Ruin: Master",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Warlord's Ruin"
+ },
+ {
+  "hash": 2559374368,
+  "name": "Pit of Heresy: Legend",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Pit of Heresy"
+ },
+ {
+  "hash": 2559374374,
+  "name": "Pit of Heresy: Master",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Pit of Heresy"
+ },
+ {
+  "hash": 2559374375,
+  "name": "Pit of Heresy: Master",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Pit of Heresy"
+ },
+ {
+  "hash": 2582501063,
+  "name": "Pit of Heresy: Standard",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Pit of Heresy"
+ },
+ {
+  "hash": 2693136600,
+  "name": "Leviathan: Normal",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 2693136601,
+  "name": "Leviathan: Normal",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 2693136602,
+  "name": "Leviathan: Normal",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 2693136603,
+  "name": "Leviathan: Normal",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 2693136604,
+  "name": "Leviathan: Normal",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 2693136605,
+  "name": "Leviathan: Normal",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 2716998124,
+  "name": "Ghosts of the Deep: Master",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Ghosts of the Deep"
+ },
+ {
+  "hash": 2727361621,
+  "name": "Equilibrium: Standard",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Equilibrium"
+ },
+ {
+  "hash": 2812525063,
+  "name": "Scourge of the Past",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Scourge of the Past"
+ },
+ {
+  "hash": 2823159265,
+  "name": "Duality: Standard",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Duality"
+ },
+ {
+  "hash": 2906950631,
+  "name": "Vow of the Disciple",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Vow of the Disciple"
+ },
+ {
+  "hash": 2918919505,
+  "name": "Root of Nightmares: Master",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Root of Nightmares"
+ },
+ {
+  "hash": 3004605630,
+  "name": "Leviathan, Spire of Stars",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan, Spire of Stars"
+ },
+ {
+  "hash": 3012587626,
+  "name": "Duality: Master",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Duality"
+ },
+ {
+  "hash": 3022541210,
+  "name": "Vault of Glass: Master",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Vault of Glass"
+ },
+ {
+  "hash": 3089205900,
+  "name": "Leviathan, Eater of Worlds: Normal",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan, Eater of Worlds"
+ },
+ {
+  "hash": 3213556450,
+  "name": "Leviathan, Spire of Stars: Prestige",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan, Spire of Stars"
+ },
+ {
+  "hash": 3257594522,
+  "name": "King's Fall: Master",
+  "type": "raid",
+  "direct": 4,
+  "orig": "King's Fall"
+ },
+ {
+  "hash": 3333172150,
+  "name": "Crown of Sorrow: Normal",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Crown of Sorrow"
+ },
+ {
+  "hash": 3446541099,
+  "name": "Leviathan: Prestige",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 3857338478,
+  "name": "Leviathan: Prestige",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 3879860661,
+  "name": "Leviathan: Prestige",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 3881495763,
+  "name": "Vault of Glass: Standard",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Vault of Glass"
+ },
+ {
+  "hash": 3889634515,
+  "name": "Vow of the Disciple: Master",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Vow of the Disciple"
+ },
+ {
+  "hash": 3912437239,
+  "name": "Leviathan: Prestige",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 3916343513,
+  "name": "Leviathan",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 4039317196,
+  "name": "Leviathan",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ },
+ {
+  "hash": 4078656646,
+  "name": "Grasp of Avarice: Standard",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Grasp of Avarice"
+ },
+ {
+  "hash": 4129614942,
+  "name": "Salvation's Edge: Master",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Salvation's Edge"
+ },
+ {
+  "hash": 4148187374,
+  "name": "Prophecy",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Prophecy"
+ },
+ {
+  "hash": 4169648176,
+  "name": "The Pantheon: Oryx Exalted",
+  "type": "raid",
+  "direct": 4,
+  "orig": "The Pantheon: Oryx Exalted"
+ },
+ {
+  "hash": 4169648177,
+  "name": "The Pantheon: Rhulk Indomitable",
+  "type": "raid",
+  "direct": 4,
+  "orig": "The Pantheon: Rhulk Indomitable"
+ },
+ {
+  "hash": 4169648179,
+  "name": "The Pantheon: Atraks Sovereign",
+  "type": "raid",
+  "direct": 4,
+  "orig": "The Pantheon: Atraks Sovereign"
+ },
+ {
+  "hash": 4169648182,
+  "name": "The Pantheon: Nezarec Sublime",
+  "type": "raid",
+  "direct": 4,
+  "orig": "The Pantheon: Nezarec Sublime"
+ },
+ {
+  "hash": 4179289725,
+  "name": "Crota's End: Normal",
+  "type": "dungeon",
+  "direct": 82,
+  "orig": "Crota's End"
+ },
+ {
+  "hash": 4206123728,
+  "name": "Leviathan: Prestige",
+  "type": "raid",
+  "direct": 4,
+  "orig": "Leviathan"
+ }
+]

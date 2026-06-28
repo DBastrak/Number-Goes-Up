@@ -1,0 +1,260 @@
+.following {
+  display: grid;
+  grid-template-columns: 290px 1fr;
+  height: 100%;
+}
+
+/* ---- Sidebar ---- */
+.following-side {
+  background: var(--panel);
+  border-right: 1px solid var(--border);
+  padding: 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: auto;
+}
+.following-add {
+  display: flex;
+  gap: 6px;
+}
+.following-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: var(--bg-2);
+  color: var(--text-bright);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+.following-input:focus,
+.following-filter:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.following-add-btn {
+  background: var(--accent);
+  color: #06121d;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-weight: 700;
+  font-size: 13px;
+}
+.following-add-btn:disabled {
+  opacity: 0.5;
+}
+.following-filter {
+  background: var(--bg-2);
+  color: var(--text-bright);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+}
+.following-error {
+  color: #e07b7b;
+  font-size: 12px;
+  margin: 0;
+}
+.following-hint {
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 8px 4px;
+  margin: 0;
+}
+
+.following-names {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 4px;
+}
+.following-name-btn {
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  padding: 9px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.12s, color 0.12s;
+}
+.following-name-btn:hover {
+  background: var(--bg-2);
+  color: var(--text-bright);
+}
+.following-name-btn.is-active {
+  background: linear-gradient(90deg, var(--bg-3), var(--bg-2));
+  color: var(--text-bright);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+/* ---- Main / profile ---- */
+.following-main {
+  padding: 24px 28px;
+  overflow: auto;
+}
+.following-placeholder {
+  color: var(--text-dim);
+  font-size: 15px;
+  margin-top: 8px;
+}
+.profile-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.profile-name {
+  margin: 0;
+  color: var(--accent);
+  font-size: 22px;
+}
+.profile-sub {
+  margin: 4px 0 0;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+.profile-remove {
+  background: var(--bg-2);
+  border: 1px solid #5a3030;
+  color: #e07b7b;
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-weight: 600;
+  font-size: 13px;
+}
+.profile-remove:hover {
+  background: #c33c33;
+  border-color: #c33c33;
+  color: #fff;
+}
+.profile-section-title {
+  margin: 22px 0 10px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+
+.following-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* ---- Private account ---- */
+.profile-private {
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.profile-private-icon {
+  font-size: 40px;
+}
+.profile-private-title {
+  margin: 12px 0 4px;
+  color: var(--text-bright);
+  font-size: 18px;
+  font-weight: 700;
+}
+.profile-private-sub {
+  margin: 0 auto;
+  max-width: 420px;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* ---- Stats ---- */
+.following-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.following-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+.following-stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+.following-stat-value.tag-raid {
+  color: #d8b4fe;
+}
+.following-stat-value.tag-dungeon {
+  color: #7dd3a8;
+}
+.following-stat-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+}
+
+/* ---- Breakdown ---- */
+.breakdown {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.breakdown-title {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.breakdown-title.tag-raid {
+  color: #d8b4fe;
+}
+.breakdown-title.tag-dungeon {
+  color: #7dd3a8;
+}
+.breakdown-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.breakdown-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.breakdown-name {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.breakdown-count {
+  color: var(--text-bright);
+  font-weight: 700;
+}
+.breakdown-empty {
+  color: var(--text-dim);
+  font-size: 13px;
+  margin: 0;
+}

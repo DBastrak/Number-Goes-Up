@@ -1,0 +1,103 @@
+:root {
+  /* Steam-inspired palette */
+  --bg-0: #0e1419;
+  --bg-1: #1b2838;
+  --bg-2: #223349;
+  --bg-3: #2a475e;
+  --panel: #16202d;
+  --panel-2: #1f2d3d;
+  --text: #c7d5e0;
+  --text-dim: #8da3b3;
+  --text-bright: #ffffff;
+  --accent: #66c0f4;
+  --accent-2: #1a9fff;
+  /* "r, g, b" form of --accent, for building accent-tinted rgba() glows in CSS.
+     Kept in sync at runtime by setVars() in utils/theme.ts. */
+  --accent-rgb: 102, 192, 244;
+  --teal: #4bc2a8;
+  /* Wallpaper sizing — overridden at runtime: custom images use `cover`, the
+     bundled cat tiles. (See refreshWallpaperBg in utils/theme.ts.) */
+  --wallpaper-size: 240px auto;
+  --wallpaper-repeat: repeat;
+  --green: #5ba32b;
+  --green-bright: #88c24a;
+  --border: #2a3f54;
+  --radius: 6px;
+  --shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: 'Motiva Sans', 'Segoe UI', Tahoma, Arial, sans-serif;
+  background: var(--bg-1);
+  color: var(--text);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input,
+select {
+  font-family: inherit;
+  color: var(--text);
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px 10px;
+  outline: none;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--accent);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-0);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--bg-3);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--accent-rgb), 0.5);
+}
+
+/* ---- Wallpaper theme: anime cat wallpaper + pink accents ---- */
+/* Rendered as a real fixed element (App.tsx) at z-index:-1 so page content paints over
+   it, while tabs that draw their own full-bleed art (.live-backdrop / .pgcr-backdrop are
+   position:fixed, z-index:0) sit above it — so the wallpaper only shows on tabs without
+   another image background. The gif tiles and is dimmed ~50% (matching the app's other
+   backdrops) for readability. Surfaces are made see-through in app.css so it shows. */
+.wallpaper-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background-color: var(--bg-1);
+  background-image:
+    linear-gradient(rgba(22, 6, 18, 0.5), rgba(22, 6, 18, 0.58)),
+    var(--wallpaper-bg);
+  background-repeat: no-repeat, var(--wallpaper-repeat);
+  background-size: cover, var(--wallpaper-size);
+  background-position: center, center;
+}
