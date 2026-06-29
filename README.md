@@ -2,8 +2,6 @@
 
 A desktop dashboard for your Destiny 2 raid &amp; dungeon stats. Built with **Electron + React (Vite)** via [electron-vite](https://electron-vite.org).
 
-> This is an early example build. The UI is in place with placeholder data; real Steam integration comes next.
-
 ## Pages
 
 1. **Login** — sign-in screen.

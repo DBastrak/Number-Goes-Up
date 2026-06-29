@@ -140,8 +140,14 @@ export async function getUserActivityStats(membershipType, membershipId, cache =
   const completed = []
   const seen = new Set()
   for (const characterId of characterIds) {
-    for (const mode of MODES) {
-      const list = await getCharacterActivities(membershipType, membershipId, characterId, mode)
+    const lists = [
+      ...(await Promise.all(
+        MODES.map((mode) => getCharacterActivities(membershipType, membershipId, characterId, mode))
+      )),
+      // Recover pre-Dungeon-mode Shattered Throne runs (filed under Story).
+      await getLegacyShatteredThrone(membershipType, membershipId, characterId)
+    ]
+    for (const list of lists) {
       for (const a of list) {
         if (!a.completed) continue
         if (a.instanceId) {
@@ -346,6 +352,71 @@ export async function getCharacterActivities(membershipType, membershipId, chara
   return all
 }
 
+// --- Legacy Shattered Throne (pre-Dungeon-mode) ---
+// The Shattered Throne launched in 2018, before Bungie added the Dungeon activity mode (82)
+// in late 2019, so its early runs are filed under Story (mode 2) and the normal dungeon
+// query misses them. Scan Story history and recover Shattered Throne clears, tagging them as
+// dungeon so they count. Story history is small, and we stop paging once we've gone past the
+// Shattered Throne's release (history is newest-first, so no older runs can be its).
+const SHATTERED_THRONE_RELEASE = Date.parse('2018-08-01T00:00:00Z')
+export async function getLegacyShatteredThrone(membershipType, membershipId, characterId) {
+  const all = []
+  const seen = new Set()
+  let page = 0
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const url =
+      `${BASE}/Destiny2/${membershipType}/Account/${membershipId}` +
+      `/Character/${characterId}/Stats/Activities/?page=${page}&mode=story&count=${PAGE_COUNT}`
+    const { body } = await bungieGet(url)
+    if (isPrivacyError(body)) throw privacyError()
+    if (body?.ErrorCode && body.ErrorCode !== 1) {
+      throw new Error(
+        `Legacy story history failed (char ${characterId}, page ${page}): ` +
+          `${body.ErrorStatus || body.Message || body.ErrorCode}`
+      )
+    }
+
+    const activities = body?.Response?.activities || []
+    for (const a of activities) {
+      const details = a.activityDetails || {}
+      // Only Shattered Throne runs (by mapped name) — skip the rest of Story history.
+      const info = describeActivity(details.referenceId, 'dungeon')
+      if (info.name !== 'The Shattered Throne') continue
+      if (details.instanceId) {
+        if (seen.has(details.instanceId)) continue
+        seen.add(details.instanceId)
+      }
+      const values = a.values || {}
+      all.push({
+        mode: 'dungeon',
+        characterId,
+        instanceId: details.instanceId,
+        referenceId: details.referenceId,
+        directorActivityHash: details.directorActivityHash,
+        activityMode: details.mode,
+        activityName: info.name,
+        difficulty: info.difficulty,
+        period: a.period,
+        completed: statValue(values, 'completed') === 1,
+        completionReason: statValue(values, 'completionReason'),
+        durationSeconds: statValue(values, 'activityDurationSeconds'),
+        kills: statValue(values, 'kills'),
+        deaths: statValue(values, 'deaths'),
+        assists: statValue(values, 'assists'),
+        playerCount: statValue(values, 'playerCount')
+      })
+    }
+
+    if (activities.length < PAGE_COUNT) break
+    const oldest = activities[activities.length - 1]?.period
+    if (oldest && Date.parse(oldest) < SHATTERED_THRONE_RELEASE) break
+    page += 1
+  }
+
+  return all
+}
+
 // Load all raid + dungeon activities across every character on the account.
 export async function loadAllActivities(session) {
   const membershipType = session.membershipType
@@ -368,6 +439,10 @@ export async function loadAllActivities(session) {
       for (const a of list) a.characterDeleted = character.deleted
       collected.push(...list)
     }
+    // Recover pre-Dungeon-mode Shattered Throne runs (filed under Story).
+    const legacy = await getLegacyShatteredThrone(membershipType, membershipId, character.characterId)
+    for (const a of legacy) a.characterDeleted = character.deleted
+    collected.push(...legacy)
   }
 
   // Defense-in-depth: dedupe by globally-unique instanceId so no run is counted twice

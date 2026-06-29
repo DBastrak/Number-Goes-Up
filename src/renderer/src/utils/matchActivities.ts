@@ -3,7 +3,8 @@ import { ACTIVITY_DEFS, resolveDef, CHALLENGE_DIFFICULTIES } from '../data/activ
 // Speed badge: devil (👿) if below target, running man (🏃) if within 5 min over target.
 export function getSpeedBadge(activityName, durationSeconds) {
     const def = resolveDef(activityName)
-    if (!def.targetSeconds || !durationSeconds) return null
+    // resolveDef returns null for activities with no benchmark (e.g. Pantheon) — no badge.
+    if (!def?.targetSeconds || !durationSeconds) return null
     const overTarget = durationSeconds - def.targetSeconds
     const underTarget = durationSeconds - def.targetSeconds
     if (underTarget < -120) return { icon: '🥶', label: 'speed demon', seconds: overTarget }

@@ -43,6 +43,7 @@ export const ACTIVITY_DEFS = [
         names: [
             'Pantheon: Calus Resplendent',
             'Pantheon: Morgeth Surpassing',
+            'Pantheon: Morgeth',
             'Pantheon: Insurrection Prime Revolutionary',
             'The Pantheon: Atraks Sovereign',
             'The Pantheon: Rhulk Indomitable',
