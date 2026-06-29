@@ -36,7 +36,13 @@ export default function Following() {
         [u.membershipId]: {
           ...p[u.membershipId],
           breakdown: res?.ok
-            ? { state: 'done', raids: res.raids, dungeons: res.dungeons }
+            ? {
+                state: 'done',
+                raids: res.raids,
+                dungeons: res.dungeons,
+                raidTotals: res.raidTotals,
+                dungeonTotals: res.dungeonTotals
+              }
             : { state: res?.private ? 'private' : 'error', error: res?.error || 'Failed to load.' }
         }
       }))
@@ -144,11 +150,26 @@ export default function Following() {
   )
 }
 
+// Column = a stat field shown both in the section totals row and per-activity cards. The
+// 3rd column is labelled "Low-man" for raids (≤3 players) and "Solo" for dungeons (1).
+const RAID_COLS = [
+  { key: 'clears', label: 'Clears' },
+  { key: 'full', label: 'Full' },
+  { key: 'lowman', label: 'Low-man' },
+  { key: 'flawless', label: 'Flawless' }
+]
+const DUNGEON_COLS = [
+  { key: 'clears', label: 'Clears' },
+  { key: 'full', label: 'Full' },
+  { key: 'lowman', label: 'Solo' },
+  { key: 'flawless', label: 'Flawless' }
+]
+
 function Profile({ user, data, onRemove }) {
   const stats = data?.stats || { state: 'loading' }
   const breakdown = data?.breakdown || { state: 'loading' }
   const total = (stats.raid || 0) + (stats.dungeon || 0)
-  const isPrivate = stats.state === 'private'
+  const isPrivate = stats.state === 'private' || breakdown.state === 'private'
 
   return (
     <div className="profile">
@@ -173,73 +194,72 @@ function Profile({ user, data, onRemove }) {
             this in Bungie.net → Settings → Privacy.
           </p>
         </div>
-      ) : (
+      ) : breakdown.state === 'loading' ? (
+        <div className="following-loading">
+          <span className="spinner" /> Crunching clears… (the first look at a Guardian can take a
+          while)
+        </div>
+      ) : breakdown.state === 'error' ? (
+        <div className="following-error">Couldn’t load: {breakdown.error}</div>
+      ) : breakdown.state === 'done' ? (
         <>
-          {stats.state === 'loading' && (
-            <div className="following-loading">
-              <span className="spinner" /> Loading stats…
-            </div>
-          )}
-          {stats.state === 'error' && (
-            <div className="following-error">Couldn’t load stats: {stats.error}</div>
-          )}
-          {stats.state === 'done' && (
-            <div className="following-stats">
-              <Stat label="Total clears" value={total} />
-              <Stat label="Raid clears" value={stats.raid} cls="tag-raid" />
-              <Stat label="Dungeon clears" value={stats.dungeon} cls="tag-dungeon" />
-            </div>
-          )}
-
-          <h3 className="profile-section-title">Per-activity clears</h3>
-          {breakdown.state === 'loading' && (
-            <div className="following-loading">
-              <span className="spinner" /> Loading per-activity clears…
-            </div>
-          )}
-          {breakdown.state === 'private' && (
-            <p className="following-hint">Per-activity history is private.</p>
-          )}
-          {breakdown.state === 'error' && (
-            <div className="following-error">Couldn’t load: {breakdown.error}</div>
-          )}
-          {breakdown.state === 'done' && (
-            <div className="breakdown">
-              <BreakdownCol title="Raids" rows={breakdown.raids} cls="tag-raid" />
-              <BreakdownCol title="Dungeons" rows={breakdown.dungeons} cls="tag-dungeon" />
-            </div>
-          )}
+          <ActivitySection
+            title="Raids"
+            cls="tag-raid"
+            totals={breakdown.raidTotals}
+            rows={breakdown.raids}
+            cols={RAID_COLS}
+          />
+          <ActivitySection
+            title="Dungeons"
+            cls="tag-dungeon"
+            totals={breakdown.dungeonTotals}
+            rows={breakdown.dungeons}
+            cols={DUNGEON_COLS}
+          />
         </>
-      )}
+      ) : null}
     </div>
   )
 }
 
-function BreakdownCol({ title, rows = [], cls }) {
+function ActivitySection({ title, cls, totals, rows = [], cols }: any) {
   return (
-    <div className="breakdown-col">
-      <h4 className={`breakdown-title ${cls}`}>{title}</h4>
+    <section className="profile-section">
+      <h3 className={`profile-section-title ${cls}`}>{title}</h3>
+
+      {/* Totals row */}
+      <div className="stat-grid stat-grid-totals">
+        {cols.map((c) => (
+          <div key={c.key} className="stat-tile">
+            <span className="stat-tile-value">{totals?.[c.key] ?? 0}</span>
+            <span className="stat-tile-label">{c.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Per-activity grid */}
       {rows.length === 0 ? (
         <p className="breakdown-empty">No clears.</p>
       ) : (
-        <ul className="breakdown-list">
+        <div className="activity-grid">
           {rows.map((r) => (
-            <li key={r.name}>
-              <span className="breakdown-name">{r.name}</span>
-              <span className="breakdown-count">{r.clears}</span>
-            </li>
+            <div key={r.name} className="activity-card">
+              <div className="activity-card-name" title={r.name}>
+                {r.name}
+              </div>
+              <div className="activity-card-stats">
+                {cols.map((c) => (
+                  <div key={c.key} className="acs">
+                    <span className="acs-value">{r[c.key] ?? 0}</span>
+                    <span className="acs-label">{c.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
-    </div>
-  )
-}
-
-function Stat({ label, value, cls }: any) {
-  return (
-    <div className="following-stat">
-      <span className={`following-stat-value ${cls || ''}`}>{value ?? '—'}</span>
-      <span className="following-stat-label">{label}</span>
-    </div>
+    </section>
   )
 }

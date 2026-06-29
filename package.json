@@ -1,6 +1,6 @@
 {
     "name": "number-go-up",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "description": "number go up — a desktop dashboard for your Destiny 2 raid & dungeon stats",
     "main": "./out/main/index.js",
     "author": "D3 Believer",

@@ -8,7 +8,7 @@ import {
   getPostGameCarnageReport,
   enrichActivities,
   getUserStats,
-  getUserBreakdown,
+  getUserActivityStats,
   getRecentCompletions,
   getFullClearCount
 } from './stats'
@@ -208,6 +208,27 @@ function wallpaperDataUrl() {
   }
 }
 
+// Shared PGCR cache (instanceId -> { flag, spi, period, teamDeaths, players }) on disk.
+// Reused by activity enrichment for the logged-in account AND followed-user profiles, so
+// any run fetched once is cheap everywhere afterward.
+function pgcrCachePath() {
+  return join(app.getPath('userData'), 'pgcr-cache-v2.json')
+}
+function readPgcrCache() {
+  try {
+    return JSON.parse(readFileSync(pgcrCachePath(), 'utf8'))
+  } catch {
+    return {}
+  }
+}
+function writePgcrCache(cache) {
+  try {
+    writeFileSync(pgcrCachePath(), JSON.stringify(cache))
+  } catch (err) {
+    console.error('Failed to save PGCR cache:', err)
+  }
+}
+
 app.whenReady().then(() => {
   // Load the Bungie API key from .env (checks the app dir and cwd).
   // In a packaged build the .env is shipped to the resources dir (see electron-builder.yml).
@@ -264,16 +285,10 @@ app.whenReady().then(() => {
     try {
       const data = await loadAllActivities(session)
 
-      // Enrich completed activities with PGCR-derived fields, reusing a disk cache.
-      const cacheFile = join(app.getPath('userData'), 'pgcr-cache-v2.json')
-      let cache = {}
-      try {
-        cache = JSON.parse(readFileSync(cacheFile, 'utf8'))
-      } catch {
-        cache = {}
-      }
+      // Enrich completed activities with PGCR-derived fields, reusing the shared disk cache.
+      const cache = readPgcrCache()
       const enriched = await enrichActivities(data.activities, cache)
-      writeFileSync(cacheFile, JSON.stringify(cache))
+      writePgcrCache(cache)
 
       const file = join(app.getPath('userData'), 'activities.json')
       writeFileSync(file, JSON.stringify(data, null, 2))
@@ -481,7 +496,9 @@ app.whenReady().then(() => {
 
   ipcMain.handle('following:breakdown', async (_event, membershipType, membershipId) => {
     try {
-      const data = await getUserBreakdown(membershipType, membershipId)
+      const cache = readPgcrCache()
+      const data = await getUserActivityStats(membershipType, membershipId, cache)
+      writePgcrCache(cache)
       return { ok: true, ...data }
     } catch (err) {
       console.error('[main] following:breakdown failed:', err.message)

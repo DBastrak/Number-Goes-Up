@@ -6,7 +6,14 @@
 // difficulty is one of: normal | master | prestige | contest | grandmaster
 
 export const ACTIVITY_MAP = {
+    // --- The Pantheon (all variants, scanned from the live manifest) ---
     '43862588': { name: 'Pantheon: Morgeth', difficulty: 'normal', raw: 'Featured Encore: Morgeth: The Pantheon' },
+    '145874766': { name: 'Pantheon: Warpriest', difficulty: 'normal', raw: 'Featured Encore: Warpriest: The Pantheon' },
+    '206811036': { name: 'Pantheon: Insurrection Prime', difficulty: 'normal', raw: 'Featured Encore: Insurrection Prime: The Pantheon' },
+    '796488315': { name: 'Pantheon: Argos', difficulty: 'normal', raw: 'Featured Reprise: Argos: The Pantheon' },
+    '1566552947': { name: 'Pantheon: Calus', difficulty: 'normal', raw: 'Featured Reprise: Calus: The Pantheon' },
+    '1953549041': { name: 'Pantheon: Gahlran', difficulty: 'normal', raw: 'Featured Reprise: Gahlran: The Pantheon' },
+    '3975235718': { name: 'Pantheon: Consecrated Mind', difficulty: 'normal', raw: 'Featured Encore: Consecrated Mind: The Pantheon' },
     '107319834': { name: 'Crota\'s End', difficulty: 'normal', raw: 'Crota\'s End: Standard' },
     '119944200': { name: 'Leviathan, Spire of Stars', difficulty: 'normal', raw: 'Leviathan, Spire of Stars: Normal' },
     '124340010': { name: 'Ghosts of the Deep', difficulty: 'normal', raw: 'Ghosts of the Deep: Ultimatum' },

@@ -130,6 +130,64 @@ export async function getUserBreakdown(membershipType, membershipId) {
   }
 }
 
+// Detailed per-activity stats for any account: clears, full (fresh) clears, low-mans, and
+// flawless clears — plus per-mode totals. clears + low-man come from the activity history
+// (low-man = raids with ≤3 players / dungeons soloed with 1); full + flawless come from the
+// PGCR, enriched via the shared cache (so repeat views and overlap with your own runs are
+// cheap). Used by the Following profile grids.
+export async function getUserActivityStats(membershipType, membershipId, cache = {}) {
+  const characterIds = await getReadableCharacterIds(membershipType, membershipId)
+  const completed = []
+  const seen = new Set()
+  for (const characterId of characterIds) {
+    for (const mode of MODES) {
+      const list = await getCharacterActivities(membershipType, membershipId, characterId, mode)
+      for (const a of list) {
+        if (!a.completed) continue
+        if (a.instanceId) {
+          if (seen.has(a.instanceId)) continue
+          seen.add(a.instanceId)
+        }
+        completed.push(a)
+      }
+    }
+  }
+
+  // Fill in fresh + flawless from each run's PGCR (cached by instanceId).
+  await enrichActivities(completed, cache)
+
+  type Row = { name: string; mode: string; clears: number; full: number; lowman: number; flawless: number }
+  const map: Record<string, Row> = {}
+  for (const a of completed) {
+    const m = (map[a.activityName] ||= {
+      name: a.activityName,
+      mode: a.mode,
+      clears: 0,
+      full: 0,
+      lowman: 0,
+      flawless: 0
+    })
+    m.clears += 1
+    if (a.fresh) m.full += 1
+    if (a.flawless) m.flawless += 1
+    const threshold = a.mode === 'raid' ? 3 : 1 // raid low-man = ≤3, dungeon solo = 1
+    if (typeof a.playerCount === 'number' && a.playerCount > 0 && a.playerCount <= threshold) {
+      m.lowman += 1
+    }
+  }
+
+  const all = Object.values(map)
+  const raids = all.filter((x) => x.mode === 'raid').sort((a, b) => b.clears - a.clears)
+  const dungeons = all.filter((x) => x.mode === 'dungeon').sort((a, b) => b.clears - a.clears)
+  const totals = (arr: Row[]) => ({
+    clears: arr.reduce((s, x) => s + x.clears, 0),
+    full: arr.reduce((s, x) => s + x.full, 0),
+    lowman: arr.reduce((s, x) => s + x.lowman, 0),
+    flawless: arr.reduce((s, x) => s + x.flawless, 0)
+  })
+  return { raids, dungeons, raidTotals: totals(raids), dungeonTotals: totals(dungeons) }
+}
+
 // Lightweight: completed raid/dungeon runs since `sinceISO` (one recent page per
 // character + mode), newest first. Used to detect new clears for followed users.
 export async function getRecentCompletions(membershipType, membershipId, sinceISO, perPage = 30) {
