@@ -11,6 +11,9 @@ import {
   saveWallpaper,
   applyWallpaper,
   refreshWallpaperBg,
+  loadAccentOverride,
+  saveAccentOverride,
+  applyWallpaperAccent,
   hexToRgb,
   rgbToHex
 } from '../utils/theme'
@@ -29,6 +32,18 @@ export default function Settings() {
   // Wallpaper mode: pink palette + anime cat wallpaper. Overrides the colour theme.
   const [wallpaper, setWallpaper] = useState(loadWallpaper())
   const [wallpaperBgName, setWallpaperBgName] = useState<string | null>(null)
+  // Accent override: use the RGB picker as the accent over a wallpaper background, instead
+  // of the colour auto-pulled from the image.
+  const [accentOverride, setAccentOverride] = useState(loadAccentOverride())
+
+  function toggleAccentOverride(v) {
+    setAccentOverride(v)
+    saveAccentOverride(v)
+    if (wallpaper) {
+      refreshWallpaperBg() // re-applies: picked accent if on, image colour if off
+      window.api?.refreshOverlayTheme?.()
+    }
+  }
 
   useEffect(() => {
     window.api?.wallpaperGetImage?.().then((r) => {
@@ -113,11 +128,13 @@ export default function Settings() {
 
   const customHex = rgbToHex(rgb.r, rgb.g, rgb.b)
 
-  // While wallpaper is on it owns the live palette, so colour edits are saved but only
-  // applied visually once wallpaper is turned back off.
+  // While wallpaper is on it owns the live palette — so colour edits are normally just
+  // saved. But with the accent override on, the picked accent is applied live (over the
+  // wallpaper background) using the stronger wallpaper tint.
   function selectPreset(theme) {
     setActivePreset(theme.id)
     if (!wallpaper) applyTheme(theme)
+    else if (accentOverride) applyWallpaperAccent(theme.accent)
     savePref({ type: 'preset', id: theme.id })
     window.api?.refreshOverlayTheme?.()
   }
@@ -128,6 +145,7 @@ export default function Settings() {
     setActivePreset(null)
     const hex = rgbToHex(next.r, next.g, next.b)
     if (!wallpaper) applyAccent(hex)
+    else if (accentOverride) applyWallpaperAccent(hex)
     savePref({ type: 'custom', hex })
     window.api?.refreshOverlayTheme?.()
   }
@@ -137,6 +155,7 @@ export default function Settings() {
     setRgb(next)
     setActivePreset(null)
     if (!wallpaper) applyAccent(hex)
+    else if (accentOverride) applyWallpaperAccent(hex)
     savePref({ type: 'custom', hex })
     window.api?.refreshOverlayTheme?.()
   }
@@ -225,6 +244,12 @@ export default function Settings() {
             </small>
           </div>
         </div>
+        <Row
+          label="Override wallpaper accent"
+          hint="Use this colour as the accent even with a kawaii background, instead of the colour pulled from the image."
+        >
+          <Toggle checked={accentOverride} onChange={toggleAccentOverride} />
+        </Row>
       </section>
 
       <section className="settings-group">

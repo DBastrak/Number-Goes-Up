@@ -208,8 +208,12 @@ export async function getUserActivityStats(membershipType, membershipId, cache =
   }
 
   const all = Object.values(map)
-  const raids = all.filter((x) => x.mode === 'raid').sort((a, b) => b.clears - a.clears)
-  const dungeons = all.filter((x) => x.mode === 'dungeon').sort((a, b) => b.clears - a.clears)
+  // Pantheon activities are mode 'raid' but get their own section.
+  const isPantheon = (n: string) => n.startsWith('Pantheon:') || n.startsWith('The Pantheon:')
+  const byClears = (a: Row, b: Row) => b.clears - a.clears
+  const raids = all.filter((x) => x.mode === 'raid' && !isPantheon(x.name)).sort(byClears)
+  const pantheon = all.filter((x) => isPantheon(x.name)).sort(byClears)
+  const dungeons = all.filter((x) => x.mode === 'dungeon').sort(byClears)
   const mergeInto = (target: Counts, src: Counts) => {
     for (const k in src) target[k] = (target[k] || 0) + src[k]
   }
@@ -234,7 +238,14 @@ export async function getUserActivityStats(membershipType, membershipId, cache =
     }
     return t
   }
-  return { raids, dungeons, raidTotals: totals(raids), dungeonTotals: totals(dungeons) }
+  return {
+    raids,
+    dungeons,
+    pantheon,
+    raidTotals: totals(raids),
+    dungeonTotals: totals(dungeons),
+    pantheonTotals: totals(pantheon)
+  }
 }
 
 // Lightweight: completed raid/dungeon runs since `sinceISO` (one recent page per

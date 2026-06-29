@@ -59,7 +59,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--accent);
+  color: var(--text-bright);
   font-size: 13px;
 }
 
@@ -89,7 +89,7 @@
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: var(--accent);
+  color: var(--text-bright);
 }
 
 .settings-row {
@@ -120,7 +120,7 @@
   min-width: 170px;
 }
 .settings-value {
-  color: var(--accent);
+  color: var(--text-bright);
   font-weight: 600;
 }
 

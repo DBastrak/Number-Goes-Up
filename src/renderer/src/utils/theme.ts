@@ -135,6 +135,36 @@ export function saveWallpaper(on) {
   }
 }
 
+// Accent override: when on, wallpaper mode uses the colour-picker accent instead of the
+// colour auto-extracted from the background image.
+const ACCENT_OVERRIDE_KEY = 'sr-accent-override'
+export function loadAccentOverride() {
+  try {
+    return localStorage.getItem(ACCENT_OVERRIDE_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+export function saveAccentOverride(on) {
+  try {
+    localStorage.setItem(ACCENT_OVERRIDE_KEY, on ? 'true' : 'false')
+  } catch {
+    /* ignore */
+  }
+}
+// The accent currently chosen via the colour picker / preset (used when override is on).
+function storedAccentHex() {
+  const pref = loadPref()
+  if (pref?.type === 'custom' && pref.hex) return pref.hex
+  if (pref?.type === 'preset') return (THEMES.find((t) => t.id === pref.id) || THEMES[0]).accent
+  return THEMES[0].accent
+}
+// Apply an accent at the wallpaper-mode surface tint — used live by the RGB picker while
+// the override is on, so the custom accent shows over the chosen background.
+export function applyWallpaperAccent(hex) {
+  applyAccent(hex, WALLPAPER_TINT)
+}
+
 // Toggle the wallpaper overlay: add the body class + pink palette, or revert to the
 // user's chosen colour theme.
 export function applyWallpaper(on) {
@@ -226,9 +256,14 @@ export async function refreshWallpaperBg() {
       root.style.setProperty('--wallpaper-bg', `url("${res.dataUrl}")`)
       root.style.setProperty('--wallpaper-size', 'cover')
       root.style.setProperty('--wallpaper-repeat', 'no-repeat')
-      const accent = await extractAccentFromImage(res.dataUrl)
-      if (accent) applyAccent(accent, WALLPAPER_TINT)
-      else setVars(WALLPAPER, WALLPAPER_TINT)
+      if (loadAccentOverride()) {
+        // Keep the user's picked accent instead of the image's colour.
+        applyAccent(storedAccentHex(), WALLPAPER_TINT)
+      } else {
+        const accent = await extractAccentFromImage(res.dataUrl)
+        if (accent) applyAccent(accent, WALLPAPER_TINT)
+        else setVars(WALLPAPER, WALLPAPER_TINT)
+      }
       return
     }
   } catch {
@@ -238,7 +273,8 @@ export async function refreshWallpaperBg() {
   root.style.setProperty('--wallpaper-bg', `url(${wallpaperGif})`)
   root.style.setProperty('--wallpaper-size', '240px auto')
   root.style.setProperty('--wallpaper-repeat', 'repeat')
-  setVars(WALLPAPER, WALLPAPER_TINT)
+  if (loadAccentOverride()) applyAccent(storedAccentHex(), WALLPAPER_TINT)
+  else setVars(WALLPAPER, WALLPAPER_TINT)
 }
 
 // --- Interface preferences (run filters) ---

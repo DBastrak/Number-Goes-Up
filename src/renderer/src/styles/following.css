@@ -114,7 +114,7 @@
 }
 .profile-name {
   margin: 0;
-  color: var(--accent);
+  color: var(--text-bright);
   font-size: 22px;
 }
 .profile-sub {
@@ -270,41 +270,45 @@
   color: #7dd3a8;
 }
 
-/* Totals row + per-activity card stats share this 4-up grid. minmax(0,1fr) keeps the
-   totals as one unbroken row that never wraps, even when the panel is narrow. */
-.stat-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-}
-.stat-grid-totals {
-  margin-bottom: 16px;
-}
-.stat-tile {
+/* Section totals — all stats inline in one bar, separate from the activity grid. */
+.totals-bar {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
   background: var(--panel-2);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 14px 16px;
+  padding: 12px 6px;
+  margin-bottom: 18px;
 }
-.stat-tile-value {
-  font-size: 26px;
-  font-weight: 800;
-  color: var(--text-bright);
-  font-variant-numeric: tabular-nums;
+.totals-item {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  padding: 2px 10px;
 }
-.stat-tile-label {
+.totals-item + .totals-item {
+  border-left: 1px solid var(--border);
+}
+.totals-item-label {
   font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--text-dim);
 }
+.totals-item-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text-bright);
+  font-variant-numeric: tabular-nums;
+}
 
 .activity-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--activity-cols, 4), minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 6px;
 }
@@ -349,7 +353,7 @@
 .acs-value {
   font-size: 18px;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--text-bright);
   font-variant-numeric: tabular-nums;
 }
 .acs-label {
@@ -365,7 +369,7 @@
   cursor: help;
 }
 .has-popup .acs-value,
-.has-popup .stat-tile-value {
+.has-popup .totals-item-value {
   text-decoration: underline dotted rgba(255, 255, 255, 0.3);
   text-underline-offset: 3px;
 }

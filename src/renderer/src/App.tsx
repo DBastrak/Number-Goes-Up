@@ -233,7 +233,6 @@ export default function App() {
           {page === 'library' && (
             <Library
               activities={activities}
-              totals={data?.totals}
               characterClasses={data?.characterClasses}
               state={activitiesState}
               error={activitiesError}

@@ -35,7 +35,7 @@
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--accent);
+  color: var(--text-bright);
   background: rgba(var(--accent-rgb), 0.12);
   border-radius: 8px;
   padding: 1px 6px;
@@ -74,7 +74,7 @@
   background: rgba(var(--accent-rgb), 0.05);
 }
 .class-name {
-  color: var(--accent);
+  color: var(--text-bright);
   font-weight: 600;
 }
 
@@ -96,7 +96,7 @@
   margin: 4px 0;
 }
 .unmatched-list code {
-  color: var(--accent);
+  color: var(--text-bright);
   background: var(--bg-0);
   padding: 1px 5px;
   border-radius: 3px;
@@ -290,7 +290,7 @@
 }
 .accordion-chevron.is-open {
   transform: rotate(180deg);
-  color: var(--accent);
+  color: var(--text-bright);
 }
 
 .accordion-panel {
@@ -398,11 +398,11 @@
 }
 .tag-raid {
   background: rgba(var(--accent-rgb), 0.18);
-  color: var(--accent);
+  color: var(--text-bright);
 }
 .tag-dungeon {
   background: rgba(75, 194, 168, 0.18);
-  color: var(--teal);
+  color: var(--text-bright);
 }
 .game-card-meta {
   margin: 0;

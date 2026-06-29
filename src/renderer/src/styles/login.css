@@ -44,7 +44,7 @@
 .login-logo {
   display: inline-block;
   font-size: 36px;
-  color: var(--accent);
+  color: var(--text-bright);
 }
 .login-brand {
   margin: 8px 0 4px;

@@ -30,12 +30,13 @@
   align-items: center;
   gap: 10px;
 }
+/* The "number go up" brand follows the theme accent (not the white-text rule). */
 .topnav-logo {
   color: var(--accent);
   font-size: 20px;
 }
 .topnav-title {
-  color: var(--text-bright);
+  color: var(--accent);
   font-weight: 700;
   letter-spacing: 0.5px;
 }
@@ -85,11 +86,11 @@
   line-height: 1.2;
 }
 .topnav-user-name {
-  color: var(--accent);
+  color: var(--text-bright);
   font-weight: 600;
 }
 .topnav-user-status {
-  color: var(--teal);
+  color: var(--text-bright);
   font-size: 12px;
 }
 .topnav-logout {
@@ -203,7 +204,7 @@ html.is-wallpaper .topnav {
 }
 .topnav-today-icon {
   align-self: center;
-  color: var(--accent);
+  color: var(--text-bright);
   font-size: 13px;
 }
 .topnav-today-value {
@@ -345,7 +346,7 @@ html.is-wallpaper .topnav {
   gap: 8px;
 }
 .notif-user {
-  color: var(--accent);
+  color: var(--text-bright);
   font-weight: 600;
   font-size: 13px;
 }

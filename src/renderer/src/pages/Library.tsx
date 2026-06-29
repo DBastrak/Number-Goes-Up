@@ -1,230 +1,96 @@
-import { useState } from 'react'
-import { computeStats, computeClassStats } from '../utils/stats'
+import { computeClassStats } from '../utils/stats'
 import { matchActivities } from '../utils/matchActivities'
-import { formatDate } from '../utils/format'
+import { computeActivityStats } from '../utils/activityStats'
+import { ActivitySection, RAID_COLS, DUNGEON_COLS } from '../components/ActivityStats'
 import '../styles/library.css'
 
-const SECTIONS = [
-  { id: 'all', label: 'All' },
-  { id: 'raid', label: 'Raid' },
-  { id: 'dungeon', label: 'Dungeon' }
-]
-
-export default function Library({
-  activities = [],
-  totals,
-  characterClasses,
-  state = 'idle',
-  error = ''
-}) {
-  const [section, setSection] = useState('all')
-  const stats = state === 'done' ? computeStats(activities, totals) : null
-  const matched = state === 'done' ? matchActivities(activities) : null
+export default function Library({ activities = [], characterClasses, state = 'idle', error = '' }) {
+  const actStats = state === 'done' ? computeActivityStats(activities) : null
   const classStats = state === 'done' ? computeClassStats(activities, characterClasses) : null
+  const unmatched = state === 'done' ? matchActivities(activities).unmatched : []
 
   return (
-    <div className="library">
-      <aside className="library-sidebar">
-        <nav className="library-sections">
-          {SECTIONS.map((s) => (
-            <button
-              key={s.id}
-              className={`library-section ${s.id === section ? 'is-active' : ''}`}
-              onClick={() => setSection(s.id)}
-            >
-              <span className="library-section-label">{s.label}</span>
-            </button>
-          ))}
-        </nav>
-      </aside>
-
-      <section className="library-main">
-        {state === 'loading' && (
-          <div className="activity-status">
-            <span className="spinner" /> Loading raids &amp; dungeons and their reports… (first load can
-            take a moment)
-          </div>
-        )}
-        {state === 'error' && (
-          <div className="activity-status is-error">Couldn’t load stats: {error}</div>
-        )}
-        {state === 'idle' && <div className="activity-status">Sign in to load your stats.</div>}
-
-        {section === 'all' && stats && (
-          <GeneralStats stats={stats} classStats={classStats} unmatched={matched?.unmatched || []} />
-        )}
-        {section === 'raid' && matched && <Accordion title="Raids" icon="⚔" rows={matched.raids} />}
-        {section === 'dungeon' && matched && (
-          <Accordion title="Dungeons" icon="☠" rows={matched.dungeons} />
-        )}
-      </section>
-    </div>
-  )
-}
-
-function GeneralStats({ stats, classStats, unmatched }) {
-  return (
-    <>
-      <header className="stats-page-header">
-        <h2 className="stats-page-heading">Overview</h2>
-        <p className="stats-page-sub">General raid &amp; dungeon stats across your account.</p>
-      </header>
-
-      <div className="stats-wrap">
-        <section className="stats-group">
-          <h3 className="stats-title">
-            <span className="activity-tag tag-raid">Raids</span>
-            {stats.raid.total} total clears
-          </h3>
-          <div className="stats-grid">
-            <StatBox value={stats.raid.total} label="Total clears" hint="Every finished run" />
-            <StatBox
-              value={stats.raid.full}
-              label="Full clears"
-            />
-            <StatBox value={stats.raid.flawless} label="Flawless" hint="No one died" />
-            <StatBox value={stats.raid.p3} label="3-player" />
-            <StatBox value={stats.raid.p2} label="2-player" />
-            <StatBox value={stats.raid.p1} label="Solo (1-player)" />
-          </div>
-        </section>
-
-        <section className="stats-group">
-          <h3 className="stats-title">
-            <span className="activity-tag tag-dungeon">Dungeons</span>
-            {stats.dungeon.total} total clears
-          </h3>
-          <div className="stats-grid">
-            <StatBox value={stats.dungeon.total} label="Total clears" hint="Every finished run" />
-            <StatBox
-              value={stats.dungeon.full}
-              label="Full clears"
-            />
-            <StatBox value={stats.dungeon.solo} label="Solo (1-player)" />
-            <StatBox value={stats.dungeon.flawless} label="Flawless" hint="No one died" />
-            <StatBox value={stats.dungeon.soloFlawless} label="Solo flawless" hint="Solo + no deaths" />
-          </div>
-        </section>
-      </div>
-
-      {classStats && classStats.length > 0 && (
-        <section className="class-stats">
-          <h3 className="stats-title">Stats by class</h3>
-          <table className="class-table">
-            <thead>
-              <tr>
-                <th>Class</th>
-                <th>Raid clears</th>
-                <th>Raid full</th>
-                <th>Dungeon clears</th>
-                <th>Dungeon full</th>
-              </tr>
-            </thead>
-            <tbody>
-              {classStats.map((c) => (
-                <tr key={c.class}>
-                  <td className="class-name">{c.class}</td>
-                  <td>{c.raidClears}</td>
-                  <td>{c.raidFull}</td>
-                  <td>{c.dungeonClears}</td>
-                  <td>{c.dungeonFull}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
+    <section className="library-main">
+      {state === 'loading' && (
+        <div className="activity-status">
+          <span className="spinner" /> Loading raids &amp; dungeons and their reports… (first load can
+          take a moment)
+        </div>
       )}
+      {state === 'error' && (
+        <div className="activity-status is-error">Couldn’t load stats: {error}</div>
+      )}
+      {state === 'idle' && <div className="activity-status">Sign in to load your stats.</div>}
 
-      {unmatched.length > 0 && <UnmatchedNote items={unmatched} />}
-    </>
+      {state === 'done' && actStats && (
+        <>
+          <ActivitySection
+            title="Raids"
+            cls="tag-raid"
+            totals={actStats.raidTotals}
+            rows={actStats.raids}
+            cols={RAID_COLS}
+            columns={3}
+          />
+          {actStats.pantheon.length > 0 && (
+            <ActivitySection
+              title="Pantheon"
+              cls="tag-master"
+              totals={actStats.pantheonTotals}
+              rows={actStats.pantheon}
+              cols={RAID_COLS}
+              columns={3}
+            />
+          )}
+          <ActivitySection
+            title="Dungeons"
+            cls="tag-dungeon"
+            totals={actStats.dungeonTotals}
+            rows={actStats.dungeons}
+            cols={DUNGEON_COLS}
+            columns={3}
+          />
+          {classStats && classStats.length > 0 && <ClassTable classStats={classStats} />}
+          {unmatched.length > 0 && <UnmatchedNote items={unmatched} />}
+        </>
+      )}
+    </section>
   )
 }
 
-function Accordion({ title, icon, rows }) {
-  const [openName, setOpenName] = useState(null)
-
+function ClassTable({ classStats }: any) {
   return (
-    <>
-      <header className="stats-page-header">
-        <h2 className="stats-page-heading">{title}</h2>
-        <p className="stats-page-sub">Select an activity to see its specific stats.</p>
-      </header>
-
-      <div className="activity-accordion">
-        {rows.map((row) => {
-          const open = openName === row.def.name
-          const cleared = row.total > 0
-          return (
-            <article
-              key={row.def.name}
-              className={`accordion-item ${open ? 'is-open' : ''} ${cleared ? '' : 'is-empty'} ${row.def.bg ? 'has-bg' : ''}`}
-              style={
-                row.def.bg
-                  ? {
-                      backgroundImage: `linear-gradient(rgba(11,16,23,0.55), rgba(11,16,23,0.55)), url(${row.def.bg})`
-                    }
-                  : undefined
-              }
-            >
-              <button
-                className="accordion-head"
-                onClick={() => setOpenName(open ? null : row.def.name)}
-                aria-expanded={open}
-              >
-                <span className="accordion-art" aria-hidden="true">
-                  {icon}
-                </span>
-                <span className="accordion-titlewrap">
-                  <span className="accordion-title">{row.def.name}</span>
-                </span>
-                <span className="accordion-summary">
-                  <span>{row.total} clears</span>
-                  <span className="dim">{row.full} full</span>
-                </span>
-                <span className={`accordion-chevron ${open ? 'is-open' : ''}`} aria-hidden="true">
-                  ▾
-                </span>
-              </button>
-
-              {open && (
-                <div className="accordion-panel">
-                  <div className="encounter-row encounter-head">
-                    <span>Released {formatDate(row.def.releaseDate).split(',')[0]}</span>
-                    <span>Clears</span>
-                  </div>
-                  <DetailRow label="Total clears" value={row.total} />
-                  <DetailRow label="Full clears (fresh)" value={row.full} />
-                  <DetailRow label="Day-one clears" value={row.dayOne}/>
-                  <DetailRow label="Challenge / Master clears" value={row.challenge}/>
-                  {Object.entries(row.byDifficulty).map(([diff, n]) => (
-                    <DetailRow key={diff} label={`· ${diff}`} value={n} sub />
-                  ))}
-                  {row.lastCleared && (
-                    <DetailRow label="Last cleared" value={formatDate(row.lastCleared)} />
-                  )}
-                </div>
-              )}
-            </article>
-          )
-        })}
-      </div>
-    </>
+    <section className="class-stats">
+      <h3 className="activity-tag tag-contest" style={{ fontSize: '20px' }}>
+        Stats by class
+      </h3>
+      <table className="class-table">
+        <thead>
+          <tr>
+            <th>Class</th>
+            <th>Raid clears</th>
+            <th>Raid full</th>
+            <th>Dungeon clears</th>
+            <th>Dungeon full</th>
+          </tr>
+        </thead>
+        <tbody>
+          {classStats.map((c) => (
+            <tr key={c.class}>
+              <td className="class-name">{c.class}</td>
+              <td>{c.raidClears}</td>
+              <td>{c.raidFull}</td>
+              <td>{c.dungeonClears}</td>
+              <td>{c.dungeonFull}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </section>
   )
 }
 
-function DetailRow({ label, value, hint, sub }: any) {
-  return (
-    <div className={`encounter-row ${sub ? 'is-sub' : ''}`}>
-      <span className="encounter-name">
-        {label}
-        {hint && <span className="detail-flag">{hint}</span>}
-      </span>
-      <span>{value}</span>
-    </div>
-  )
-}
-
-function UnmatchedNote({ items }) {
+function UnmatchedNote({ items }: any) {
   return (
     <section className="unmatched-note">
       <h3 className="stats-title">Unmatched activities ({items.length})</h3>
@@ -240,15 +106,5 @@ function UnmatchedNote({ items }) {
         ))}
       </ul>
     </section>
-  )
-}
-
-function StatBox({ value, label, hint }: any) {
-  return (
-    <div className="stat-box">
-      <span className="stat-box-value">{value}</span>
-      <span className="stat-box-label">{label}</span>
-      {hint && <span className="stat-box-hint">{hint}</span>}
-    </div>
   )
 }

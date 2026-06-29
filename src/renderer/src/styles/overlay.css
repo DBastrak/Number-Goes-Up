@@ -71,7 +71,7 @@ body,
 .overlay-today-value {
   font-size: 16px;
   font-weight: 800;
-  color: var(--accent);
+  color: var(--text-bright);
   font-variant-numeric: tabular-nums;
   text-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4);
 }
@@ -148,7 +148,7 @@ html.is-wallpaper .overlay-card {
   font-size: 34px;
   font-weight: 800;
   line-height: 1;
-  color: var(--accent);
+  color: var(--text-bright);
   font-variant-numeric: tabular-nums;
   text-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5);
 }
