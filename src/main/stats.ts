@@ -162,7 +162,23 @@ export async function getUserActivityStats(membershipType, membershipId, cache =
   // Fill in fresh + flawless from each run's PGCR (cached by instanceId).
   await enrichActivities(completed, cache)
 
-  type Row = { name: string; mode: string; clears: number; full: number; lowman: number; flawless: number }
+  // Each row also keeps sub-breakdowns for the hover popups: clears + full split by
+  // difficulty, and low-mans split by fireteam size (1 solo / 2 duo / 3 trio).
+  type Counts = Record<string, number>
+  type Row = {
+    name: string
+    mode: string
+    clears: number
+    full: number
+    lowman: number
+    flawless: number
+    clearsByDiff: Counts
+    fullByDiff: Counts
+    lowmanBySize: Counts
+  }
+  const bump = (obj: Counts, key) => {
+    obj[key] = (obj[key] || 0) + 1
+  }
   const map: Record<string, Row> = {}
   for (const a of completed) {
     const m = (map[a.activityName] ||= {
@@ -171,26 +187,53 @@ export async function getUserActivityStats(membershipType, membershipId, cache =
       clears: 0,
       full: 0,
       lowman: 0,
-      flawless: 0
+      flawless: 0,
+      clearsByDiff: {},
+      fullByDiff: {},
+      lowmanBySize: {}
     })
+    const diff = a.difficulty || 'normal'
     m.clears += 1
-    if (a.fresh) m.full += 1
+    bump(m.clearsByDiff, diff)
+    if (a.fresh) {
+      m.full += 1
+      bump(m.fullByDiff, diff)
+    }
     if (a.flawless) m.flawless += 1
     const threshold = a.mode === 'raid' ? 3 : 1 // raid low-man = ≤3, dungeon solo = 1
     if (typeof a.playerCount === 'number' && a.playerCount > 0 && a.playerCount <= threshold) {
       m.lowman += 1
+      bump(m.lowmanBySize, a.playerCount)
     }
   }
 
   const all = Object.values(map)
   const raids = all.filter((x) => x.mode === 'raid').sort((a, b) => b.clears - a.clears)
   const dungeons = all.filter((x) => x.mode === 'dungeon').sort((a, b) => b.clears - a.clears)
-  const totals = (arr: Row[]) => ({
-    clears: arr.reduce((s, x) => s + x.clears, 0),
-    full: arr.reduce((s, x) => s + x.full, 0),
-    lowman: arr.reduce((s, x) => s + x.lowman, 0),
-    flawless: arr.reduce((s, x) => s + x.flawless, 0)
-  })
+  const mergeInto = (target: Counts, src: Counts) => {
+    for (const k in src) target[k] = (target[k] || 0) + src[k]
+  }
+  const totals = (arr: Row[]) => {
+    const t = {
+      clears: 0,
+      full: 0,
+      lowman: 0,
+      flawless: 0,
+      clearsByDiff: {} as Counts,
+      fullByDiff: {} as Counts,
+      lowmanBySize: {} as Counts
+    }
+    for (const x of arr) {
+      t.clears += x.clears
+      t.full += x.full
+      t.lowman += x.lowman
+      t.flawless += x.flawless
+      mergeInto(t.clearsByDiff, x.clearsByDiff)
+      mergeInto(t.fullByDiff, x.fullByDiff)
+      mergeInto(t.lowmanBySize, x.lowmanBySize)
+    }
+    return t
+  }
   return { raids, dungeons, raidTotals: totals(raids), dungeonTotals: totals(dungeons) }
 }
 

@@ -270,14 +270,15 @@
   color: #7dd3a8;
 }
 
-/* Totals row + per-activity card stats share this 4-up grid. */
+/* Totals row + per-activity card stats share this 4-up grid. minmax(0,1fr) keeps the
+   totals as one unbroken row that never wraps, even when the panel is narrow. */
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 .stat-grid-totals {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 .stat-tile {
   display: flex;
@@ -303,29 +304,41 @@
 
 .activity-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
   margin-bottom: 6px;
 }
 .activity-card {
   background: var(--panel);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 12px 14px;
+}
+.activity-card-banner {
+  height: 76px;
+  display: flex;
+  align-items: flex-end;
+  padding: 8px 12px;
+  background-color: var(--bg-3);
+  background-size: cover;
+  background-position: center 30%;
+  background-repeat: no-repeat;
+  /* rounded top corners instead of clipping the whole card, so stat popups can overflow */
+  border-radius: var(--radius) var(--radius) 0 0;
 }
 .activity-card-name {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
-  color: var(--text-bright);
-  margin-bottom: 10px;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .activity-card-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
+  padding: 14px;
 }
 .acs {
   display: flex;
@@ -334,7 +347,7 @@
   gap: 1px;
 }
 .acs-value {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
@@ -344,4 +357,57 @@
   text-transform: uppercase;
   letter-spacing: 0.3px;
   color: var(--text-dim);
+}
+
+/* ---- Hover breakdown popup (clears/full by difficulty, low-mans by size) ---- */
+.has-popup {
+  position: relative;
+  cursor: help;
+}
+.has-popup .acs-value,
+.has-popup .stat-tile-value {
+  text-decoration: underline dotted rgba(255, 255, 255, 0.3);
+  text-underline-offset: 3px;
+}
+.cell-popup {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  min-width: 132px;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+}
+.has-popup:hover .cell-popup {
+  display: block;
+}
+.cell-popup::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: var(--border);
+}
+.cell-popup-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  font-size: 12px;
+  padding: 2px 0;
+  white-space: nowrap;
+}
+.cell-popup-key {
+  color: var(--text-dim);
+}
+.cell-popup-val {
+  color: var(--text-bright);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
