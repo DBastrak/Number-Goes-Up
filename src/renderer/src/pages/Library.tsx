@@ -4,10 +4,36 @@ import { computeActivityStats } from '../utils/activityStats'
 import { ActivitySection, RAID_COLS, DUNGEON_COLS } from '../components/ActivityStats'
 import '../styles/library.css'
 
-export default function Library({ activities = [], characterClasses, state = 'idle', error = '' }) {
+// The fastest completed run of this activity matching an achievement badge
+// (Flawless = flawless full clear; Solo/Duo/Trio = that fireteam size).
+function findFastestBadgeRun(activities, name, badge) {
+  const size = { Solo: 1, Duo: 2, Trio: 3 }[badge]
+  let best = null
+  for (const a of activities) {
+    if (!a.completed || a.activityName !== name) continue
+    if (badge === 'Flawless') {
+      if (!(a.flawless && a.fresh)) continue
+    } else if (a.playerCount !== size) continue
+    if (!best || a.durationSeconds < best.durationSeconds) best = a
+  }
+  return best
+}
+
+export default function Library({
+  activities = [],
+  characterClasses,
+  state = 'idle',
+  error = '',
+  onOpenRun
+}) {
   const actStats = state === 'done' ? computeActivityStats(activities) : null
   const classStats = state === 'done' ? computeClassStats(activities, characterClasses) : null
   const unmatched = state === 'done' ? matchActivities(activities).unmatched : []
+
+  function openBadgeRun(row, badge) {
+    const run = findFastestBadgeRun(activities, row.name, badge)
+    if (run) onOpenRun?.(run.instanceId)
+  }
 
   return (
     <section className="library-main">
@@ -31,6 +57,7 @@ export default function Library({ activities = [], characterClasses, state = 'id
             rows={actStats.raids}
             cols={RAID_COLS}
             columns={3}
+            onBadge={openBadgeRun}
           />
           {actStats.pantheon.length > 0 && (
             <ActivitySection
@@ -40,6 +67,7 @@ export default function Library({ activities = [], characterClasses, state = 'id
               rows={actStats.pantheon}
               cols={RAID_COLS}
               columns={3}
+              onBadge={openBadgeRun}
             />
           )}
           <ActivitySection
@@ -49,6 +77,7 @@ export default function Library({ activities = [], characterClasses, state = 'id
             rows={actStats.dungeons}
             cols={DUNGEON_COLS}
             columns={3}
+            onBadge={openBadgeRun}
           />
           {classStats && classStats.length > 0 && <ClassTable classStats={classStats} />}
           {unmatched.length > 0 && <UnmatchedNote items={unmatched} />}

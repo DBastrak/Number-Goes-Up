@@ -175,10 +175,21 @@ export async function getUserActivityStats(membershipType, membershipId, cache =
     clearsByDiff: Counts
     fullByDiff: Counts
     lowmanBySize: Counts
+    flawlessBySize: Counts
+    fastestByBadge: Record<string, { instanceId: string; durationSeconds: number }>
   }
   const bump = (obj: Counts, key) => {
     obj[key] = (obj[key] || 0) + 1
   }
+  // Fastest run per achievement badge (Flawless / Solo / Duo / Trio) so the profile
+  // card badges can link straight to that run's PGCR.
+  const keepFastest = (m: Row, key: string, a) => {
+    if (!a.instanceId || typeof a.durationSeconds !== 'number') return
+    const cur = m.fastestByBadge[key]
+    if (!cur || a.durationSeconds < cur.durationSeconds)
+      m.fastestByBadge[key] = { instanceId: a.instanceId, durationSeconds: a.durationSeconds }
+  }
+  const SIZE_BADGE = { 1: 'Solo', 2: 'Duo', 3: 'Trio' }
   const map: Record<string, Row> = {}
   for (const a of completed) {
     const m = (map[a.activityName] ||= {
@@ -190,7 +201,9 @@ export async function getUserActivityStats(membershipType, membershipId, cache =
       flawless: 0,
       clearsByDiff: {},
       fullByDiff: {},
-      lowmanBySize: {}
+      lowmanBySize: {},
+      flawlessBySize: {},
+      fastestByBadge: {}
     })
     const diff = a.difficulty || 'normal'
     m.clears += 1
@@ -199,11 +212,20 @@ export async function getUserActivityStats(membershipType, membershipId, cache =
       m.full += 1
       bump(m.fullByDiff, diff)
     }
-    if (a.flawless) m.flawless += 1
+    // Flawless only counts when the run was also a full (fresh) clear — a deathless
+    // checkpoint run isn't a real flawless.
+    const flawless = a.flawless && a.fresh
+    if (flawless) {
+      m.flawless += 1
+      keepFastest(m, 'Flawless', a)
+    }
     const threshold = a.mode === 'raid' ? 3 : 1 // raid low-man = ≤3, dungeon solo = 1
     if (typeof a.playerCount === 'number' && a.playerCount > 0 && a.playerCount <= threshold) {
       m.lowman += 1
       bump(m.lowmanBySize, a.playerCount)
+      // Track which low-man sizes were also flawless (gilds the Solo/Duo/Trio badges).
+      if (flawless) bump(m.flawlessBySize, a.playerCount)
+      if (SIZE_BADGE[a.playerCount]) keepFastest(m, SIZE_BADGE[a.playerCount], a)
     }
   }
 
@@ -225,7 +247,8 @@ export async function getUserActivityStats(membershipType, membershipId, cache =
       flawless: 0,
       clearsByDiff: {} as Counts,
       fullByDiff: {} as Counts,
-      lowmanBySize: {} as Counts
+      lowmanBySize: {} as Counts,
+      flawlessBySize: {} as Counts
     }
     for (const x of arr) {
       t.clears += x.clears
@@ -235,6 +258,7 @@ export async function getUserActivityStats(membershipType, membershipId, cache =
       mergeInto(t.clearsByDiff, x.clearsByDiff)
       mergeInto(t.fullByDiff, x.fullByDiff)
       mergeInto(t.lowmanBySize, x.lowmanBySize)
+      mergeInto(t.flawlessBySize, x.flawlessBySize)
     }
     return t
   }

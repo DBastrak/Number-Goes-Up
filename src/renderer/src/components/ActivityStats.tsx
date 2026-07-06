@@ -70,6 +70,25 @@ function buildBreakdown(col, data) {
   return rows.length ? rows : null
 }
 
+// Achievement badges shown in the banner next to the activity name. Raids get
+// Flawless / Trio / Duo / Solo; dungeons get Flawless / Solo. Flawless is always gold;
+// a low-man badge is only gold when that size was also done flawlessly (e.g. solo
+// flawless), otherwise it uses the theme accent.
+function buildBadges(r) {
+  const badges: { label: string; gold: boolean }[] = []
+  const flawlessSizes = r.flawlessBySize || {}
+  if (r.flawless > 0) badges.push({ label: 'Flawless', gold: true })
+  if (r.mode === 'dungeon') {
+    if (r.lowman > 0) badges.push({ label: 'Solo', gold: !!flawlessSizes['1'] })
+  } else {
+    const sizes = r.lowmanBySize || {}
+    if (sizes['3']) badges.push({ label: 'Trio', gold: !!flawlessSizes['3'] })
+    if (sizes['2']) badges.push({ label: 'Duo', gold: !!flawlessSizes['2'] })
+    if (sizes['1']) badges.push({ label: 'Solo', gold: !!flawlessSizes['1'] })
+  }
+  return badges
+}
+
 function StatPopup({ rows }: any) {
   return (
     <div className="cell-popup">
@@ -83,7 +102,9 @@ function StatPopup({ rows }: any) {
   )
 }
 
-export function ActivitySection({ title, cls, totals, rows = [], cols, columns = 4 }: any) {
+// `onBadge(row, label)` (optional) makes the achievement badges clickable — the Activities
+// tab uses it to jump to the fastest run matching that badge.
+export function ActivitySection({ title, cls, totals, rows = [], cols, columns = 4, onBadge }: any) {
   return (
     <section className="profile-section">
       <h3 className={`activity-tag ${cls}`} style={{ fontSize: '20px' }}>
@@ -111,6 +132,7 @@ export function ActivitySection({ title, cls, totals, rows = [], cols, columns =
         <div className="activity-grid" style={{ ['--activity-cols' as any]: columns }}>
           {rows.map((r) => {
             const def = resolveDef(PANTHEON_BANNER_RAID[r.name] || r.name)
+            const badges = buildBadges(r)
             return (
               <div key={r.name} className="activity-card">
                 <div
@@ -126,6 +148,26 @@ export function ActivitySection({ title, cls, totals, rows = [], cols, columns =
                   <span className="activity-card-name" title={r.name}>
                     {r.name}
                   </span>
+                  {badges.length > 0 && (
+                    <span className="activity-card-badges">
+                      {badges.map((b) =>
+                        onBadge ? (
+                          <button
+                            key={b.label}
+                            className={`card-badge is-clickable ${b.gold ? 'is-gold' : ''}`}
+                            title={`Open your fastest ${b.label.toLowerCase()} run`}
+                            onClick={() => onBadge(r, b.label)}
+                          >
+                            {b.label}
+                          </button>
+                        ) : (
+                          <span key={b.label} className={`card-badge ${b.gold ? 'is-gold' : ''}`}>
+                            {b.label}
+                          </span>
+                        )
+                      )}
+                    </span>
+                  )}
                 </div>
                 <div className="activity-card-stats">
                   {cols.map((c) => {

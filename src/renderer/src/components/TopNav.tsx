@@ -5,7 +5,7 @@ const TABS = [
   { id: 'activity', label: 'Recent Runs' },
   { id: 'live', label: 'Live Activity' },
   { id: 'following', label: 'Following' },
-  { id: 'bingo', label: 'Bingo' },
+  { id: 'bingo', label: 'RaD Fun' },
   { id: 'settings', label: 'Settings' }
 ]
 

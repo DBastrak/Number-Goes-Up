@@ -5,7 +5,7 @@ import Library from './pages/Library'
 import Activity from './pages/Activity'
 import LiveActivity from './pages/LiveActivity'
 import Following from './pages/Following'
-import Bingo from './pages/Bingo'
+import RadFun from './pages/RadFun'
 import Settings from './pages/Settings'
 import PgcrDetail from './pages/PgcrDetail'
 import Notifications from './components/Notifications'
@@ -159,8 +159,13 @@ export default function App() {
     if (user) loadData(false)
   }, [user, loadData])
 
-  function openPgcr(instanceId) {
+  // Where the PGCR back button returns to (recent runs by default; Following when a
+  // followed player's badge opened the report).
+  const [pgcrBack, setPgcrBack] = useState('activity')
+
+  function openPgcr(instanceId, from = 'activity') {
     setSelectedInstance(instanceId)
+    setPgcrBack(from)
     setPage('pgcr')
   }
 
@@ -236,6 +241,7 @@ export default function App() {
               characterClasses={data?.characterClasses}
               state={activitiesState}
               error={activitiesError}
+              onOpenRun={openPgcr}
             />
           )}
           {page === 'activity' && (
@@ -249,13 +255,13 @@ export default function App() {
             />
           )}
           {page === 'live' && <LiveActivity />}
-          {page === 'following' && <Following />}
-          {page === 'bingo' && <Bingo />}
+          {page === 'following' && <Following onOpenRun={(id) => openPgcr(id, 'following')} />}
+          {page === 'bingo' && <RadFun />}
           {page === 'settings' && <Settings />}
           {page === 'pgcr' && (
             <PgcrDetail
               instanceId={selectedInstance}
-              onBack={() => setPage('activity')}
+              onBack={() => setPage(pgcrBack)}
               onSearchPlayer={searchPlayerRuns}
             />
           )}

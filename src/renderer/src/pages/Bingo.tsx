@@ -66,21 +66,29 @@ function bingoLines(n) {
   return lines
 }
 
+// Session cache of the current board + marks, so switching tabs (which unmounts this
+// component) doesn't lose progress. A fresh board still resets it as usual.
+let savedBingo = null
+
 export default function Bingo() {
   const [text, setText] = useState(loadItemsText)
-  const [size, setSize] = useState(5)
-  const [freeSpace, setFreeSpace] = useState(true)
+  const [size, setSize] = useState(savedBingo?.size ?? 5)
+  const [freeSpace, setFreeSpace] = useState(savedBingo?.freeSpace ?? true)
   const [addValue, setAddValue] = useState('')
   const [toast, setToast] = useState(null)
   // The currently displayed board ({ grid, freeIndex, n }) and the set of marked
   // cell indices. Marks persist until a new board is generated.
-  const [board, setBoard] = useState(null)
-  const [marked, setMarked] = useState(() => new Set())
+  const [board, setBoard] = useState(savedBingo?.board ?? null)
+  const [marked, setMarked] = useState(() => new Set(savedBingo?.marked ?? []))
   const canvasRef = useRef(null)
   const toastTimer = useRef(null)
   // Winning lines already completed on the current board, so we only react to a
-  // newly-formed bingo rather than re-rolling on every click.
-  const completedLines = useRef(new Set())
+  // newly-formed bingo rather than re-rolling on every click. Restored with the
+  // board so returning to the tab doesn't re-fire the bingo celebration.
+  const completedLines = useRef(new Set(savedBingo?.completedLines ?? []))
+  // Last size/freeSpace the generate-on-change effect saw, so it can tell a real
+  // settings change apart from a mount (incl. StrictMode's double effect run).
+  const prevCfg = useRef({ size, freeSpace })
 
   const items = parseItems(text)
   const cells = size * size
@@ -256,8 +264,25 @@ export default function Bingo() {
     }
   }, [board, marked])
 
-  // Draw an initial board on mount and whenever size/free toggles (if enough items).
+  // Cache the board state for this app session (runs after the bingo-detect effect so
+  // completedLines is up to date).
   useEffect(() => {
+    savedBingo = {
+      board,
+      marked: [...marked],
+      size,
+      freeSpace,
+      completedLines: [...completedLines.current]
+    }
+  }, [board, marked, size, freeSpace])
+
+  // Generate a board when the settings actually change, or on mount when there's no
+  // board to show. Mounting with a restored board keeps it — this must stay a no-op
+  // for repeated runs (StrictMode double-invokes effects in dev).
+  useEffect(() => {
+    const changed = prevCfg.current.size !== size || prevCfg.current.freeSpace !== freeSpace
+    prevCfg.current = { size, freeSpace }
+    if (!changed && board) return
     if (parseItems(text).length >= need) generate()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [size, freeSpace])

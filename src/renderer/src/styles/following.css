@@ -337,6 +337,45 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+}
+/* Achievement badges (Flawless / Trio / Duo / Solo) in the banner, beside the name */
+.activity-card-badges {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+.card-badge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 3px;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  /* solid dark backing so badges stay readable over banner art */
+  background: rgba(11, 16, 23, 0.72);
+}
+/* Gold = flawless achievement (Flawless itself, or a low-man done flawlessly) */
+.card-badge.is-gold {
+  border-color: #d4af37;
+  color: #ffd76a;
+}
+/* Clickable badge (Activities tab) — jumps to the fastest run matching the achievement */
+.card-badge.is-clickable {
+  font-family: inherit;
+  cursor: pointer;
+}
+.card-badge.is-clickable:hover {
+  background: rgba(var(--accent-rgb), 0.3);
+}
+.card-badge.is-gold.is-clickable:hover {
+  background: rgba(212, 175, 55, 0.3);
+  color: #ffe9a8;
 }
 .activity-card-stats {
   display: grid;

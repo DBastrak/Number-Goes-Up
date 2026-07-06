@@ -30,10 +30,36 @@ import { autoUpdater } from 'electron-updater'
 // The main window, kept so the auto-updater can message the renderer.
 let mainWin = null
 
+// Persisted main-window size (saved on close, restored on launch).
+const windowStateFile = () => join(app.getPath('userData'), 'window-state.json')
+
+function readWindowState() {
+  try {
+    const s = JSON.parse(readFileSync(windowStateFile(), 'utf8'))
+    if (typeof s?.width === 'number' && typeof s?.height === 'number') return s
+  } catch {
+    /* first launch or unreadable — use defaults */
+  }
+  return null
+}
+
+function saveWindowState(win) {
+  try {
+    const maximized = win.isMaximized()
+    // getBounds() while maximized reports the maximized size — keep the last normal
+    // size instead so unmaximizing after relaunch restores something sensible.
+    const { width, height } = maximized ? win.getNormalBounds() : win.getBounds()
+    writeFileSync(windowStateFile(), JSON.stringify({ width, height, maximized }))
+  } catch (err) {
+    console.error('Failed to save window state:', err)
+  }
+}
+
 function createWindow() {
+  const saved = readWindowState()
   const mainWindow = new BrowserWindow({
-    width: 1536,
-    height: 984,
+    width: saved?.width ?? 1536,
+    height: saved?.height ?? 984,
     minWidth: 940,
     minHeight: 640,
     show: false,
@@ -48,8 +74,12 @@ function createWindow() {
   })
 
   mainWindow.on('ready-to-show', () => {
+    if (saved?.maximized) mainWindow.maximize()
     mainWindow.show()
   })
+
+  // Remember the window size the user left it at.
+  mainWindow.on('close', () => saveWindowState(mainWindow))
 
   // Closing the main window also closes the overlay + any jumpscare so the app can quit.
   mainWindow.on('closed', () => {

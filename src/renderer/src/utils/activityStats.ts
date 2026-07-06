@@ -19,7 +19,8 @@ export function computeActivityStats(activities = []) {
       flawless: 0,
       clearsByDiff: {},
       fullByDiff: {},
-      lowmanBySize: {}
+      lowmanBySize: {},
+      flawlessBySize: {}
     })
     const diff = a.difficulty || 'normal'
     m.clears += 1
@@ -28,11 +29,16 @@ export function computeActivityStats(activities = []) {
       m.full += 1
       bump(m.fullByDiff, diff)
     }
-    if (a.flawless) m.flawless += 1
+    // Flawless only counts when the run was also a full (fresh) clear — a deathless
+    // checkpoint run isn't a real flawless.
+    const flawless = a.flawless && a.fresh
+    if (flawless) m.flawless += 1
     const threshold = a.mode === 'raid' ? 3 : 1 // raid low-man = ≤3, dungeon solo = 1
     if (typeof a.playerCount === 'number' && a.playerCount > 0 && a.playerCount <= threshold) {
       m.lowman += 1
       bump(m.lowmanBySize, a.playerCount)
+      // Track which low-man sizes were also flawless (gilds the Solo/Duo/Trio badges).
+      if (flawless) bump(m.flawlessBySize, a.playerCount)
     }
   }
 
@@ -54,7 +60,8 @@ export function computeActivityStats(activities = []) {
       flawless: 0,
       clearsByDiff: {},
       fullByDiff: {},
-      lowmanBySize: {}
+      lowmanBySize: {},
+      flawlessBySize: {}
     }
     for (const x of arr) {
       t.clears += x.clears
@@ -64,6 +71,7 @@ export function computeActivityStats(activities = []) {
       mergeInto(t.clearsByDiff, x.clearsByDiff)
       mergeInto(t.fullByDiff, x.fullByDiff)
       mergeInto(t.lowmanBySize, x.lowmanBySize)
+      mergeInto(t.flawlessBySize, x.flawlessBySize)
     }
     return t
   }

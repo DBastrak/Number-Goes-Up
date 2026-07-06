@@ -1,0 +1,250 @@
+/* Vendors tab — accordion per vendor, item icon grid, perk tooltip on hover. */
+
+.vendors {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.vendors-header {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.vendors-heading {
+  margin: 0;
+  font-size: 24px;
+  color: var(--text-bright);
+}
+.vendors-sub {
+  color: var(--text-dim);
+  font-size: 13px;
+}
+
+/* --- Accordion --- */
+.vendor-acc {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 14px;
+}
+.vendor-acc-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.vendor-acc-head:hover {
+  background: rgba(var(--accent-rgb), 0.06);
+}
+.vendor-acc-title {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.vendor-acc-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+.vendor-acc-subtitle {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.vendor-acc-count {
+  font-size: 12px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.vendor-acc-chevron {
+  font-size: 20px;
+  color: var(--text-dim);
+  transition: transform 0.15s ease;
+}
+.vendor-acc-chevron.is-open {
+  transform: rotate(90deg);
+}
+
+.vendor-acc-body {
+  padding: 4px 16px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.vendor-group-title {
+  margin: 14px 0 8px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-dim);
+}
+
+/* --- Item list (name-only rows) --- */
+.vendor-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+.vendor-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px 6px 8px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.vendor-item-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  background: var(--bg-3);
+  flex-shrink: 0;
+}
+.vendor-item.tier-exotic {
+  border-left: 3px solid #ceae33;
+}
+.vendor-item.tier-legendary {
+  border-left: 3px solid #522f65;
+}
+.vendor-item-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-bright);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vendor-item-type {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+/* --- Hover tooltip (item details + perks) --- */
+.vendor-popup {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 240px;
+  padding: 10px 12px;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  z-index: 30;
+}
+.vendor-item:hover .vendor-popup {
+  display: block;
+}
+.vendor-popup-name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+.vendor-popup-type {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.vendor-popup-perks {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+.vendor-popup-perk {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.vendor-popup-perk-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.vendor-popup-perk-name {
+  font-size: 12px;
+  color: var(--text);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vendor-popup-perk-type {
+  font-size: 10px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.vendor-popup-desc {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--text-dim);
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+/* Wide variant for the random-roll perk pool table */
+.vendor-popup.is-wide {
+  width: 460px;
+}
+.vendor-popup-cols {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 10px;
+  margin-top: 8px;
+}
+.vendor-popup-col-head {
+  margin: 0 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 3px;
+}
+.vendor-popup-col-opt {
+  margin: 0 0 2px;
+  font-size: 11px;
+  color: var(--text);
+}
+/* Little stat table (Health / Melee / Grenade / Super / Class / Weapons) */
+.vendor-popup-statgrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px 12px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+.vendor-popup-stat {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+}
+.vendor-popup-stat-name {
+  color: var(--text-dim);
+}
+.vendor-popup-stat-value {
+  color: var(--text-bright);
+  font-weight: 600;
+}

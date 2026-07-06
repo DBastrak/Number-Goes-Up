@@ -2,14 +2,32 @@ import { useState, useEffect, useCallback } from 'react'
 import { ActivitySection, RAID_COLS, DUNGEON_COLS } from '../components/ActivityStats'
 import '../styles/following.css'
 
-export default function Following() {
+// Loaded profiles are kept at module level so they survive the component unmounting when
+// you switch tabs — a Guardian's page only loads once per app session. The selection is
+// remembered too, so coming back to the tab restores the profile you were viewing.
+let profileCache = {} // membershipId -> { stats, breakdown }
+let lastSelectedId = null
+
+export default function Following({ onOpenRun }) {
   const [list, setList] = useState([])
   const [filter, setFilter] = useState('')
   const [input, setInput] = useState('')
   const [adding, setAdding] = useState(false)
   const [addError, setAddError] = useState('')
-  const [selectedId, setSelectedId] = useState(null)
-  const [profiles, setProfiles] = useState({}) // membershipId -> { stats, breakdown }
+  const [selectedId, setSelectedIdState] = useState(lastSelectedId)
+  const [profiles, setProfilesState] = useState(profileCache)
+
+  const setSelectedId = (id) => {
+    lastSelectedId = id
+    setSelectedIdState(id)
+  }
+  // State setter that mirrors every update into the module-level cache.
+  const setProfiles = useCallback((updater) => {
+    setProfilesState((p) => {
+      profileCache = typeof updater === 'function' ? updater(p) : updater
+      return profileCache
+    })
+  }, [])
 
   const loadProfile = useCallback(async (u) => {
     setProfiles((p) => ({
@@ -50,11 +68,15 @@ export default function Following() {
         }
       }))
     )
-  }, [])
+  }, [setProfiles])
 
   function select(u) {
     setSelectedId(u.membershipId)
-    if (!profiles[u.membershipId]) loadProfile(u)
+    // Load once per session (cached); retry only if a previous attempt failed.
+    const cached = profiles[u.membershipId]
+    const failed =
+      cached && (cached.stats?.state === 'error' || cached.breakdown?.state === 'error')
+    if (!cached || failed) loadProfile(u)
   }
 
   useEffect(() => {
@@ -97,6 +119,12 @@ export default function Following() {
     await window.api?.followingRemove?.(membershipId)
     setList((l) => l.filter((u) => u.membershipId !== membershipId))
     if (selectedId === membershipId) setSelectedId(null)
+    // Drop the cached profile so re-following starts fresh.
+    setProfiles((p) => {
+      const next = { ...p }
+      delete next[membershipId]
+      return next
+    })
   }
 
   const filtered = list.filter((u) => u.name.toLowerCase().includes(filter.trim().toLowerCase()))
@@ -146,18 +174,32 @@ export default function Following() {
         {!selected ? (
           <div className="following-placeholder">Select a Guardian to view their profile.</div>
         ) : (
-          <Profile user={selected} data={profiles[selectedId]} onRemove={() => removeUser(selectedId)} />
+          <Profile
+            user={selected}
+            data={profiles[selectedId]}
+            onRemove={() => removeUser(selectedId)}
+            onOpenRun={onOpenRun}
+          />
         )}
       </section>
     </div>
   )
 }
 
-function Profile({ user, data, onRemove }) {
+function Profile({ user, data, onRemove, onOpenRun }) {
   const stats = data?.stats || { state: 'loading' }
   const breakdown = data?.breakdown || { state: 'loading' }
   const total = (stats.raid || 0) + (stats.dungeon || 0)
   const isPrivate = stats.state === 'private' || breakdown.state === 'private'
+
+  // Badge click → this Guardian's fastest run matching the achievement (precomputed by
+  // the main process as fastestByBadge on each row).
+  const openBadgeRun =
+    onOpenRun &&
+    ((row, badge) => {
+      const run = row.fastestByBadge?.[badge]
+      if (run?.instanceId) onOpenRun(run.instanceId)
+    })
 
   return (
     <div className="profile">
@@ -197,6 +239,7 @@ function Profile({ user, data, onRemove }) {
             totals={breakdown.raidTotals}
             rows={breakdown.raids}
             cols={RAID_COLS}
+            onBadge={openBadgeRun}
           />
           {breakdown.pantheon?.length > 0 && (
             <ActivitySection
@@ -205,6 +248,7 @@ function Profile({ user, data, onRemove }) {
               totals={breakdown.pantheonTotals}
               rows={breakdown.pantheon}
               cols={RAID_COLS}
+              onBadge={openBadgeRun}
             />
           )}
           <ActivitySection
@@ -213,6 +257,7 @@ function Profile({ user, data, onRemove }) {
             totals={breakdown.dungeonTotals}
             rows={breakdown.dungeons}
             cols={DUNGEON_COLS}
+            onBadge={openBadgeRun}
           />
         </>
       ) : null}
