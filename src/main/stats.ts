@@ -278,6 +278,7 @@ export async function getRecentCompletions(membershipType, membershipId, sinceIS
   const since = sinceISO ? Date.parse(sinceISO) : 0
   const characterIds = await getCharacterIds(membershipType, membershipId)
   const out = []
+  const seen = new Set() // one instance can appear on two characters (mid-run swap)
   for (const characterId of characterIds) {
     for (const mode of MODES) {
       const url =
@@ -288,6 +289,11 @@ export async function getRecentCompletions(membershipType, membershipId, sinceIS
         if (statValue(a.values || {}, 'completed') !== 1) continue
         const t = Date.parse(a.period)
         if (!(t > since)) continue
+        const iid = a.activityDetails?.instanceId
+        if (iid) {
+          if (seen.has(iid)) continue
+          seen.add(iid)
+        }
         const info = describeActivity(a.activityDetails?.referenceId, mode)
         out.push({
           mode,
@@ -523,13 +529,15 @@ export async function loadAllActivities(session) {
     collected.push(...legacy)
   }
 
-  // Defense-in-depth: dedupe by globally-unique instanceId so no run is counted twice
-  // (an activity instance belongs to exactly one character + mode, so this only removes
-  // true duplicates, never distinct clears).
+  // Dedupe by globally-unique instanceId so no run is counted twice. A mid-run
+  // character swap leaves TWO rows for one instance — the abandoned character's
+  // (completed=0) and the finishing character's (completed=1) — so prefer the
+  // completed row, otherwise real clears get dropped as "incomplete".
   const byInstance = new Map()
   for (const a of collected) {
     const key = a.instanceId || `${a.characterId}:${a.referenceId}:${a.period}`
-    if (!byInstance.has(key)) byInstance.set(key, a)
+    const existing = byInstance.get(key)
+    if (!existing || (a.completed && !existing.completed)) byInstance.set(key, a)
   }
   const activities = [...byInstance.values()]
   if (activities.length !== collected.length) {
