@@ -1,31 +1,4 @@
-/* RaD Fun hub (Bingo + Roulette sub-tabs) and the roulette wheel. */
-
-.radfun-tabs {
-  display: flex;
-  gap: 8px;
-  padding: 16px 24px 0;
-  max-width: 1100px;
-  margin: 0 auto;
-}
-.radfun-tab {
-  padding: 7px 18px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-dim);
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  cursor: pointer;
-}
-.radfun-tab:hover {
-  color: var(--text);
-  background: rgba(var(--accent-rgb), 0.08);
-}
-.radfun-tab.is-active {
-  color: var(--text-bright);
-  border-color: var(--accent);
-  background: rgba(var(--accent-rgb), 0.14);
-}
+/* Roulette page styles (reached via the RaD Fun dropdown in the top nav). */
 
 /* --- Roulette --- */
 /* One centred column: menu, reel and spin button all share the reel's width, and the
@@ -36,8 +9,8 @@
   align-items: center;
   justify-content: center;
   gap: 20px;
-  max-width: 1160px;
-  min-height: calc(100vh - 260px);
+  max-width: 1400px;
+  min-height: calc(100vh - 190px);
   margin: 0 auto;
   padding: 20px 24px 32px;
 }
@@ -86,29 +59,52 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 4px 6px;
+  gap: 8px;
 }
+/* Image card: checkbox on the left, activity name across the top, banner art filling
+   the rest of the card. */
 .roulette-item {
+  position: relative;
+  width: 212px;
+  height: 92px;
   display: flex;
   align-items: center;
-  gap: 7px;
-  padding: 5px 10px;
+  padding-left: 10px;
   border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--panel-2);
-  font-size: 12px;
-  color: var(--text);
+  border-radius: var(--radius);
+  background-color: var(--bg-3);
+  background-size: cover;
+  background-position: center 30%;
   cursor: pointer;
-  white-space: nowrap;
+  overflow: hidden;
 }
 .roulette-item:hover {
-  background: rgba(var(--accent-rgb), 0.08);
+  border-color: rgba(var(--accent-rgb), 0.6);
 }
 .roulette-item:has(input:checked) {
-  border-color: rgba(var(--accent-rgb), 0.6);
+  border-color: var(--accent);
+}
+/* Un-ticked cards drop out visually. */
+.roulette-item.is-off {
+  filter: grayscale(0.9);
+  opacity: 0.55;
 }
 .roulette-item input {
   accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+.roulette-item-name {
+  position: absolute;
+  top: 8px;
+  left: 34px;
+  right: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  line-height: 1.2;
 }
 
 .roulette-main {
@@ -124,7 +120,7 @@
 /* Sized to show 3 cards fully; the 4th/5th peeking at the edges fade out. */
 .reel-viewport {
   position: relative;
-  width: min(100%, 1160px);
+  width: min(100%, 1400px);
   margin: 0 auto;
   overflow: hidden;
   background: var(--bg-0);
@@ -164,12 +160,12 @@
 }
 .reel-strip {
   display: flex;
-  gap: 20px;
+  gap: 24px;
   will-change: transform;
 }
 .reel-tile {
-  flex: 0 0 320px; /* + 20px gap = TILE_W (340) in Roulette.tsx */
-  height: 200px;
+  flex: 0 0 384px; /* + 24px gap = TILE_W (408) in Roulette.tsx */
+  height: 240px;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   background-color: var(--bg-3);
@@ -180,7 +176,7 @@
   padding: 12px 14px;
 }
 .reel-tile-name {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 700;
   color: #fff;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);

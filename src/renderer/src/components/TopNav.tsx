@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react'
 import WindowControls from './WindowControls'
 
 const TABS = [
@@ -5,7 +6,15 @@ const TABS = [
   { id: 'activity', label: 'Recent Runs' },
   { id: 'live', label: 'Live Activity' },
   { id: 'following', label: 'Following' },
-  { id: 'bingo', label: 'RaD Fun' },
+  // "RaD Fun" is a dropdown — its children are real pages.
+  {
+    id: 'radfun',
+    label: 'RaD Fun',
+    children: [
+      { id: 'bingo', label: 'Bingo' },
+      { id: 'roulette', label: 'Roulette' }
+    ]
+  },
   { id: 'settings', label: 'Settings' }
 ]
 
@@ -20,6 +29,21 @@ export default function TopNav({
   onBell,
   onLogout
 }) {
+  // Hover-driven dropdown with a short close delay, so the menu survives the cursor
+  // travelling from the tab down to the menu items (pure CSS :hover dropped it the
+  // instant the pointer left the button).
+  const [dropOpen, setDropOpen] = useState(false)
+  const closeTimer = useRef(null)
+  const openDrop = () => {
+    clearTimeout(closeTimer.current)
+    setDropOpen(true)
+  }
+  const closeDrop = () => {
+    clearTimeout(closeTimer.current)
+    closeTimer.current = setTimeout(() => setDropOpen(false), 250)
+  }
+  useEffect(() => () => clearTimeout(closeTimer.current), [])
+
   return (
     <header className="topnav">
       <div className="topnav-brand">
@@ -28,15 +52,48 @@ export default function TopNav({
       </div>
 
       <nav className="topnav-tabs">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            className={`topnav-tab ${page === tab.id ? 'is-active' : ''}`}
-            onClick={() => onNavigate(tab.id)}
-          >
-            {tab.label}
-          </button>
-        ))}
+        {TABS.map((tab) =>
+          tab.children ? (
+            <div
+              key={tab.id}
+              className="topnav-drop"
+              onMouseEnter={openDrop}
+              onMouseLeave={closeDrop}
+            >
+              <button
+                className={`topnav-tab ${
+                  tab.children.some((c) => c.id === page) ? 'is-active' : ''
+                }`}
+                // Clicking the tab itself jumps straight to the first entry.
+                onClick={() => onNavigate(tab.children[0].id)}
+              >
+                {tab.label} <span className="topnav-drop-caret">▾</span>
+              </button>
+              <div className={`topnav-drop-menu ${dropOpen ? 'is-open' : ''}`}>
+                {tab.children.map((c) => (
+                  <button
+                    key={c.id}
+                    className={`topnav-drop-item ${page === c.id ? 'is-active' : ''}`}
+                    onClick={() => {
+                      onNavigate(c.id)
+                      setDropOpen(false)
+                    }}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <button
+              key={tab.id}
+              className={`topnav-tab ${page === tab.id ? 'is-active' : ''}`}
+              onClick={() => onNavigate(tab.id)}
+            >
+              {tab.label}
+            </button>
+          )
+        )}
       </nav>
 
       <div className="topnav-user">

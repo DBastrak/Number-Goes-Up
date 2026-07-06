@@ -5,7 +5,8 @@ import Library from './pages/Library'
 import Activity from './pages/Activity'
 import LiveActivity from './pages/LiveActivity'
 import Following from './pages/Following'
-import RadFun from './pages/RadFun'
+import Bingo from './pages/Bingo'
+import Roulette from './pages/Roulette'
 import Settings from './pages/Settings'
 import PgcrDetail from './pages/PgcrDetail'
 import Notifications from './components/Notifications'
@@ -256,7 +257,8 @@ export default function App() {
           )}
           {page === 'live' && <LiveActivity />}
           {page === 'following' && <Following onOpenRun={(id) => openPgcr(id, 'following')} />}
-          {page === 'bingo' && <RadFun />}
+          {page === 'bingo' && <Bingo />}
+          {page === 'roulette' && <Roulette />}
           {page === 'settings' && <Settings />}
           {page === 'pgcr' && (
             <PgcrDetail

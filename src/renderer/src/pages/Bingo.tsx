@@ -40,8 +40,9 @@ function cssVar(name, fallback) {
 function geometry(n) {
   const pad = 40
   const titleH = 64
-  // Cell size reduced ~36% from the original 150 / 116.
-  const cellSize = n === 5 ? 96 : 74
+  // Internal render resolution — the canvas is displayed at 100% of its container
+  // width (CSS), so bigger cells here just mean a sharper, larger board.
+  const cellSize = n === 5 ? 150 : 116
   const boardW = cellSize * n
   return {
     pad,
@@ -179,8 +180,8 @@ export default function Bingo() {
           ctx.strokeRect(x + 0.5, y + 0.5, cellSize - 1, cellSize - 1)
 
           ctx.fillStyle = isFree ? accent : '#c7d5e0'
-          const maxW = cellSize - 16
-          const baseFs = n === 5 ? 12 : 10
+          const maxW = cellSize - 18
+          const baseFs = n === 5 ? 21 : 16
           const maxLines = n === 5 ? 4 : 5
           const { lines, fs, lh } = wrapText(ctx, grid[idx], maxW, maxLines, baseFs)
           ctx.font = `600 ${fs}px 'Segoe UI', sans-serif`

@@ -626,6 +626,11 @@ export async function getPostGameCarnageReport(instanceId) {
   })
 
   const teamDeaths = players.reduce((sum, p) => sum + (p.deaths || 0), 0)
+  // Distinct accounts in the fireteam. PGCR entries are per character, so a player who
+  // swaps characters mid-run shows up twice — counting entries would turn a duo into a
+  // trio and break low-man detection.
+  const accountCount =
+    new Set(players.map((p) => p.membershipId).filter(Boolean)).size || players.length
   const period = r.period
   const activityWasStartedFromBeginning = r.activityWasStartedFromBeginning ?? null
   const startingPhaseIndex = r.startingPhaseIndex ?? null
@@ -650,6 +655,7 @@ export async function getPostGameCarnageReport(instanceId) {
     fresh: isFreshClear({ period, activityWasStartedFromBeginning, startingPhaseIndex }),
     teamDeaths,
     flawless: teamDeaths === 0,
+    accountCount,
     players
   }
 }
@@ -685,16 +691,19 @@ export async function enrichActivities(activities, cache = {}) {
       startingPhaseIndex: rec.spi
     })
     if (rec.players) a.players = rec.players
+    // The history stat counts characters, so a mid-run character swap inflates it (a
+    // duo looks like a trio) — the PGCR's distinct-account count is the real fireteam.
+    if (rec.accountCount > 0) a.playerCount = rec.accountCount
   }
 
   // Apply whatever's cached, then fetch anything missing — including older cache entries
-  // that predate player names (so the names get backfilled on the next load).
+  // that predate player names / account counts (so those get backfilled on next load).
   const toFetch = []
   for (const a of targets) {
     const hit = cache[a.instanceId]
     if (hit) {
       apply(a, hit)
-      if (!hit.players) toFetch.push(a)
+      if (!hit.players || hit.accountCount === undefined) toFetch.push(a)
     } else {
       toFetch.push(a)
     }
@@ -712,6 +721,7 @@ export async function enrichActivities(activities, cache = {}) {
         spi: r.startingPhaseIndex,
         period: r.period,
         teamDeaths: r.teamDeaths,
+        accountCount: r.accountCount,
         players: (r.players || []).map((p) => p.name).filter(Boolean)
       }
       cache[a.instanceId] = rec

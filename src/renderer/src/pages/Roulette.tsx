@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { ACTIVITY_DEFS } from '../data/activityDefs'
+import caseOpenMp3 from '../assets/case-open.mp3'
 import '../styles/radfun.css'
 
 // Raid & Dungeon roulette, CS:GO case-opening style: a horizontal reel of activity
@@ -30,8 +31,10 @@ function loadExcluded(mode) {
   }
 }
 
-const TILE_W = 340 // card width (320) + gap (20) — keep in sync with .reel-tile CSS
-const SPIN_MS = 5200
+const TILE_W = 408 // card width (384) + gap (24) — keep in sync with .reel-tile CSS
+// Fallback spin length — replaced by the case-opening sound's real duration once its
+// metadata loads, so the reel stops exactly when the audio does.
+const DEFAULT_SPIN_MS = 5200
 const WINNER_AT = 42 // reel index where the winning card sits
 
 function buildReel(pool) {
@@ -59,10 +62,31 @@ export default function Roulette() {
   const [animate, setAnimate] = useState(false)
   const [spinning, setSpinning] = useState(false)
   const [result, setResult] = useState(null)
+  const [spinMs, setSpinMs] = useState(DEFAULT_SPIN_MS)
   const viewportRef = useRef(null)
   const spinTimer = useRef(null)
+  const audioRef = useRef(null)
 
   const pool = DEFS[mode].filter((d) => !excluded.has(d.name))
+
+  // Case-opening sound. The reel's spin duration tracks the audio's real length so
+  // both finish together.
+  useEffect(() => {
+    const audio = new Audio(caseOpenMp3)
+    audio.preload = 'auto'
+    audio.addEventListener('loadedmetadata', () => {
+      if (Number.isFinite(audio.duration) && audio.duration > 1) {
+        // Stop the reel ~1s before the audio ends (the clip's tail plays over the
+        // revealed winner, like the case-opened jingle).
+        setSpinMs(Math.max(1000, Math.round(audio.duration * 1000) - 2700))
+      }
+    })
+    audioRef.current = audio
+    return () => {
+      audio.pause()
+      audioRef.current = null
+    }
+  }, [])
 
   useEffect(() => () => clearTimeout(spinTimer.current), [])
 
@@ -107,6 +131,13 @@ export default function Roulette() {
     setAnimate(false)
     setOffset(0)
     setSpinning(true)
+    const audio = audioRef.current
+    if (audio) {
+      audio.currentTime = 0
+      audio.play().catch(() => {
+        /* autoplay refusal — spin silently */
+      })
+    }
     requestAnimationFrame(() =>
       requestAnimationFrame(() => {
         setAnimate(true)
@@ -116,7 +147,7 @@ export default function Roulette() {
     spinTimer.current = setTimeout(() => {
       setSpinning(false)
       setResult(next.winner.name)
-    }, SPIN_MS + 150)
+    }, spinMs + 150)
   }
 
   const all = DEFS[mode]
@@ -141,14 +172,24 @@ export default function Roulette() {
         </div>
         <div className="roulette-picks">
           {all.map((d) => (
-            <label key={d.name} className="roulette-item">
+            <label
+              key={d.name}
+              className={`roulette-item ${excluded.has(d.name) ? 'is-off' : ''}`}
+              style={
+                d.bg
+                  ? {
+                      backgroundImage: `linear-gradient(rgba(11,16,23,0.3), rgba(11,16,23,0.75)), url(${d.bg})`
+                    }
+                  : undefined
+              }
+            >
               <input
                 type="checkbox"
                 checked={!excluded.has(d.name)}
                 onChange={() => toggle(d.name)}
                 disabled={spinning}
               />
-              <span>{d.name}</span>
+              <span className="roulette-item-name">{d.name}</span>
             </label>
           ))}
         </div>
@@ -162,7 +203,7 @@ export default function Roulette() {
             style={{
               transform: `translateX(${-offset}px)`,
               transition: animate
-                ? `transform ${SPIN_MS}ms cubic-bezier(0.08, 0.6, 0.04, 1)`
+                ? `transform ${spinMs}ms cubic-bezier(0.08, 0.6, 0.04, 1)`
                 : 'none'
             }}
           >
