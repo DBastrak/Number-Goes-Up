@@ -14,8 +14,13 @@ export interface Api {
   // Returns the saved session (for auto-restore on launch), or null.
   getSession: () => Promise<any>
 
-  // Signs out and forgets the saved account.
+  // Signs out and forgets the saved account (and any Bungie OAuth tokens).
   logout: () => Promise<{ ok: boolean }>
+
+  // Bungie OAuth. `getAuthStatus` reports whether sign-in is configured and active;
+  // `startBungieLogin` opens the interactive sign-in and resolves { ok, session } / error.
+  getAuthStatus: () => Promise<{ configured: boolean; authenticated: boolean }>
+  startBungieLogin: () => Promise<any>
 
   // Loads all raid + dungeon activities for the logged-in account.
   // Returns { ok: true, activities, characterIds, ... } or { ok: false, error }.
@@ -39,7 +44,11 @@ export interface Api {
   // Overlay timer window controls.
   getDisplays: () => Promise<any>
   getOverlayConfig: () => Promise<any>
-  setOverlay: (cfg: { enabled: boolean; displayId: number | null }) => Promise<any>
+  setOverlay: (cfg: {
+    enabled: boolean
+    displayId: number | null
+    destinyOnly?: boolean
+  }) => Promise<any>
   moveOverlay: (displayId: number) => Promise<any>
   // Pin: toggle whether the overlay is locked (click-through) or draggable.
   toggleOverlayLock: () => Promise<{ locked: boolean }>
@@ -93,6 +102,9 @@ const api: Api = {
   getSession: () => ipcRenderer.invoke('get-session'),
 
   logout: () => ipcRenderer.invoke('logout'),
+
+  getAuthStatus: () => ipcRenderer.invoke('oauth:status'),
+  startBungieLogin: () => ipcRenderer.invoke('oauth:start'),
 
   loadActivities: () => ipcRenderer.invoke('load-activities'),
 

@@ -232,6 +232,12 @@ export default function App() {
           items={notifItems}
           onClear={clearNotifs}
           onClose={() => setShowNotifs(false)}
+          onOpen={(instanceId) => {
+            setShowNotifs(false)
+            // Back from the PGCR returns to the page the user was on (keep the
+            // existing back target if the report was opened from another PGCR).
+            openPgcr(instanceId, page === 'pgcr' ? pgcrBack : page)
+          }}
         />
       )}
       <main className="app-content">

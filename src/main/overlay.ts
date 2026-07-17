@@ -4,8 +4,9 @@
 //                        clickable (via a forwarded-mouse hotspot) so you can unlock it.
 //   unlocked          — interactive + draggable; move it anywhere, position is saved.
 
-import { BrowserWindow, screen } from 'electron'
+import { app, BrowserWindow, screen } from 'electron'
 import { join } from 'path'
+import { spawn } from 'child_process'
 
 let overlayWin = null
 let locked = true // start pinned/click-through
@@ -23,7 +24,99 @@ type OverlayCfg = {
   x?: number | null
   y?: number | null
   locked?: boolean
+  destinyOnly?: boolean
 }
+
+// --- "Only while Destiny 2 is focused" gating -------------------------------------
+// A persistent hidden PowerShell child polls the foreground window's process name once
+// a second (Win32 GetForegroundWindow — no native node modules needed). While the gate
+// is on, the overlay window is hidden unless that name is destiny2.
+
+let destinyOnly = false
+let gameFocused = true
+let watchProc = null
+
+// Note: if the app is killed hard, the child self-terminates on its next WriteLine
+// (broken stdout pipe -> unhandled IOException ends the loop).
+const FOCUS_SCRIPT = [
+  "$def='using System;using System.Runtime.InteropServices;public class FG{[DllImport(\"user32.dll\")]public static extern IntPtr GetForegroundWindow();[DllImport(\"user32.dll\")]public static extern uint GetWindowThreadProcessId(IntPtr h,out uint pid);}'",
+  'Add-Type -TypeDefinition $def',
+  'while($true){',
+  '$h=[FG]::GetForegroundWindow();$p=0;[void][FG]::GetWindowThreadProcessId($h,[ref]$p)',
+  "$n=''",
+  'try{$n=(Get-Process -Id $p -ErrorAction Stop).ProcessName}catch{}',
+  '[Console]::Out.WriteLine($n)',
+  'Start-Sleep -Milliseconds 1000',
+  '}'
+].join('\n')
+
+// Show or hide the (existing) overlay window per the gate + current focus.
+function applyVisibility() {
+  if (!overlayWin) return
+  const visible = !destinyOnly || gameFocused
+  if (visible && !overlayWin.isVisible()) overlayWin.showInactive()
+  else if (!visible && overlayWin.isVisible()) overlayWin.hide()
+}
+
+function startFocusWatch() {
+  if (watchProc) return
+  if (process.platform !== 'win32') {
+    // No watcher available — fail open so the overlay still shows.
+    gameFocused = true
+    return
+  }
+  gameFocused = false // assume not in-game until the first report says otherwise
+  try {
+    watchProc = spawn(
+      'powershell.exe',
+      ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', FOCUS_SCRIPT],
+      { windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] }
+    )
+    let buf = ''
+    watchProc.stdout.on('data', (chunk) => {
+      buf += chunk.toString()
+      let nl
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).trim().toLowerCase()
+        buf = buf.slice(nl + 1)
+        if (!line) continue // transient lookup failure — keep the last known state
+        const focused = line === 'destiny2'
+        if (focused !== gameFocused) {
+          gameFocused = focused
+          applyVisibility()
+        }
+      }
+    })
+    watchProc.on('exit', () => {
+      watchProc = null
+    })
+  } catch (err) {
+    console.error('[overlay] focus watcher failed to start:', err)
+    watchProc = null
+    gameFocused = true // fail open
+  }
+}
+
+function stopFocusWatch() {
+  if (watchProc) {
+    try {
+      watchProc.kill()
+    } catch {
+      /* already gone */
+    }
+    watchProc = null
+  }
+  gameFocused = true
+}
+
+// Turn the gate on/off (persisted setting). Applies immediately to a live overlay.
+export function setOverlayDestinyOnly(next) {
+  destinyOnly = !!next
+  if (destinyOnly && overlayWin) startFocusWatch()
+  else stopFocusWatch()
+  applyVisibility()
+}
+// ----------------------------------------------------------------------------------
 
 // index.ts wires this up so dragged positions are written back to overlay.json.
 export function setOverlayPersist(fn) {
@@ -113,6 +206,7 @@ export function showOverlay(cfg: OverlayCfg = {}) {
   const displayId = cfg.displayId ?? null
   customPos = cfg.x != null && cfg.y != null ? { x: cfg.x, y: cfg.y } : null
   if (typeof cfg.locked === 'boolean') locked = cfg.locked
+  if (typeof cfg.destinyOnly === 'boolean') destinyOnly = cfg.destinyOnly
 
   if (!overlayWin) {
     overlayWin = new BrowserWindow({
@@ -130,7 +224,8 @@ export function showOverlay(cfg: OverlayCfg = {}) {
       show: false,
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
-        sandbox: false
+        sandbox: false,
+        devTools: !app.isPackaged
       }
     })
     // Highest practical stacking level + visible across spaces / over fullscreen.
@@ -165,14 +260,20 @@ export function showOverlay(cfg: OverlayCfg = {}) {
 
     overlayWin.on('closed', () => {
       overlayWin = null
+      stopFocusWatch()
     })
   }
   positionOverlay(displayId)
   applyLock()
   overlayWin.showInactive()
+  // With the gate on, start hidden until Destiny reports as the foreground window.
+  if (destinyOnly) startFocusWatch()
+  else stopFocusWatch()
+  applyVisibility()
 }
 
 export function hideOverlay() {
+  stopFocusWatch()
   if (overlayWin) {
     overlayWin.close()
     overlayWin = null

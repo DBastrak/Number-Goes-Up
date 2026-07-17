@@ -5,7 +5,9 @@
 //   200 characters          -> class of the active character
 //   204 characterActivities -> currentActivityHash + dateActivityStarted (the timer)
 //   205 characterEquipment  -> equipped weapons + exotic armour
-//   1000 transitory         -> fireteam members (usually needs OAuth; best-effort)
+//   1000 transitory         -> fireteam members (private component: only returned when the
+//                             request is authenticated as this account, i.e. an OAuth token
+//                             is passed. Without one it comes back empty.)
 //
 // Activity / item names are resolved through the single-entity manifest endpoint
 // (Destiny2/Manifest/{type}/{hash}/), which works with just the API key. Definitions
@@ -152,12 +154,15 @@ async function resolveFireteam(partyMembers = [], self) {
   return out
 }
 
-export async function getLiveActivity(session) {
+export async function getLiveActivity(session, accessToken = null) {
   const membershipType = session.membershipType
   const membershipId = session.primaryMembershipId
 
+  // Authenticate the self-profile read so the private transitory (fireteam) component is
+  // returned. `token: null` is a plain public read (fireteam then stays unavailable).
   const { body } = await bungieGet(
-    `${BASE}/Destiny2/${membershipType}/Profile/${membershipId}/?components=100,200,204,205,1000`
+    `${BASE}/Destiny2/${membershipType}/Profile/${membershipId}/?components=100,200,204,205,1000`,
+    { token: accessToken }
   )
   const resp = body?.Response
   if (!resp) return { ok: true, inActivity: false, reason: 'profile-unavailable' }
@@ -219,11 +224,15 @@ export async function getLiveActivity(session) {
   // Active character loadout.
   const loadout = await resolveLoadout(equipment[activeId]?.items || [])
 
-  // Fireteam (best-effort — transitory is often privacy-restricted without OAuth).
+  // Fireteam. The transitory component is only populated when the request is
+  // authenticated as this account, so distinguish the states for the UI:
+  //   'transitory'      -> we have real fireteam data
+  //   'solo'            -> authenticated but not in a fireteam
+  //   'unauthenticated' -> no OAuth token; can't read the fireteam at all
   const selfChar = characters[activeId]
   const selfEmblem = selfChar?.emblemPath ? ICON_BASE + selfChar.emblemPath : null
   let fireteam = []
-  let fireteamSource = 'unavailable'
+  let fireteamSource
   if (transitory?.partyMembers?.length) {
     fireteam = await resolveFireteam(transitory.partyMembers, {
       membershipId,
@@ -232,6 +241,8 @@ export async function getLiveActivity(session) {
       loadout
     })
     fireteamSource = 'transitory'
+  } else {
+    fireteamSource = accessToken ? 'solo' : 'unauthenticated'
   }
 
   const result = {

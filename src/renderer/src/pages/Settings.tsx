@@ -92,7 +92,12 @@ export default function Settings() {
 
   // Overlay timer: list of monitors + persisted config (lives in the main process).
   const [displays, setDisplays] = useState([])
-  const [overlay, setOverlay] = useState({ enabled: false, displayId: null, align: 'auto' })
+  const [overlay, setOverlay] = useState({
+    enabled: false,
+    displayId: null,
+    align: 'auto',
+    destinyOnly: false
+  })
 
   useEffect(() => {
     let cancelled = false
@@ -106,7 +111,8 @@ export default function Settings() {
       setOverlay({
         enabled: !!cfg.enabled,
         displayId: cfg.displayId ?? primary?.id ?? list[0]?.id ?? null,
-        align: cfg.align ?? 'auto'
+        align: cfg.align ?? 'auto',
+        destinyOnly: !!cfg.destinyOnly
       })
     })
     return () => {
@@ -272,6 +278,15 @@ export default function Settings() {
           hint="Always-on-top activity timer. Click the 📌 pin on the overlay to drag it anywhere, click it again to lock it in place"
         >
           <Toggle checked={overlay.enabled} onChange={(v) => updateOverlay({ enabled: v })} />
+        </Row>
+        <Row
+          label="Only while Destiny is focused"
+          hint="Hide the overlay unless Destiny 2 is the active window (it reappears the moment you tab back in)"
+        >
+          <Toggle
+            checked={overlay.destinyOnly}
+            onChange={(v) => updateOverlay({ destinyOnly: v })}
+          />
         </Row>
         <Row label="Monitor" hint="Which display the overlay appears on">
           <select

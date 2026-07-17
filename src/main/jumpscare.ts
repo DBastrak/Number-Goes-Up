@@ -2,7 +2,7 @@
 // window that plays the gif + sound over everything else, then closes itself. Separate
 // from the app window so it covers the whole screen like a real overlay.
 
-import { BrowserWindow, screen } from 'electron'
+import { app, BrowserWindow, screen } from 'electron'
 import { join } from 'path'
 
 let scareWin = null
@@ -36,6 +36,7 @@ export function showJumpscare() {
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
+      devTools: !app.isPackaged,
       // Let the gif's audio start without a user gesture inside this window.
       autoplayPolicy: 'no-user-gesture-required'
     }

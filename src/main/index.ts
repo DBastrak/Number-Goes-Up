@@ -14,6 +14,13 @@ import {
 } from './stats'
 import { getLiveActivity } from './live'
 import {
+  startOAuthLogin,
+  getAccessToken,
+  hasAuth,
+  clearAuth,
+  isOAuthConfigured
+} from './oauth'
+import {
   getDisplays,
   showOverlay,
   hideOverlay,
@@ -69,7 +76,9 @@ function createWindow() {
     title: 'number go up',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false
+      sandbox: false,
+      // No DevTools in the packaged app (also disables the F12 / Ctrl+Shift+I shortcuts).
+      devTools: !app.isPackaged
     }
   })
 
@@ -176,7 +185,8 @@ const OVERLAY_DEFAULTS = {
   x: null,
   y: null,
   locked: true,
-  align: 'auto' // 'auto' (by screen side) | 'left' | 'center' | 'right'
+  align: 'auto', // 'auto' (by screen side) | 'left' | 'center' | 'right'
+  destinyOnly: false // only show the overlay while Destiny 2 is the focused window
 }
 function overlayConfigPath() {
   return join(app.getPath('userData'), 'overlay.json')
@@ -285,15 +295,35 @@ app.whenReady().then(() => {
   // Return the saved session (for auto-restore on launch), or null.
   ipcMain.handle('get-session', () => readSession())
 
-  // Sign out: forget the saved account so the next launch shows the login screen.
+  // Sign out: forget the saved account (and any OAuth tokens) so the next launch shows
+  // the login screen.
   ipcMain.handle('logout', () => {
     currentSession = null
+    clearAuth()
     try {
       rmSync(join(app.getPath('userData'), 'session.json'), { force: true })
     } catch (err) {
       console.error('Failed to clear session:', err)
     }
     return { ok: true }
+  })
+
+  // Whether Bungie OAuth is configured (.env) and whether we currently hold tokens.
+  ipcMain.handle('oauth:status', () => ({
+    configured: isOAuthConfigured(),
+    authenticated: hasAuth()
+  }))
+
+  // Interactive Bungie sign-in. On success, adopt the authenticated session (same shape
+  // as the name lookup) and persist it so it auto-restores like any other login.
+  ipcMain.handle('oauth:start', async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const result = await startOAuthLogin(win || undefined)
+    if (result.ok && 'session' in result && result.session) {
+      currentSession = result.session
+      saveSession(result.session)
+    }
+    return result
   })
 
   // Login: run the 3-step Bungie lookup, then save the session on success.
@@ -350,7 +380,10 @@ app.whenReady().then(() => {
     const session = readSession()
     if (!session) return { ok: false, error: 'No session — please log in first.' }
     try {
-      return await getLiveActivity(session)
+      // An access token (when signed in with Bungie) makes the private fireteam
+      // component readable; without one this stays a best-effort public read.
+      const token = await getAccessToken()
+      return await getLiveActivity(session, token)
     } catch (err) {
       console.error('[main] get-live-activity failed:', err)
       return { ok: false, error: err.message }
@@ -366,10 +399,12 @@ app.whenReady().then(() => {
   ipcMain.handle('get-displays', () => getDisplays())
   ipcMain.handle('get-overlay-config', () => readOverlayConfig())
   ipcMain.handle('set-overlay', (_event, cfg) => {
+    const prev = readOverlayConfig()
     const next = {
-      ...readOverlayConfig(),
+      ...prev,
       enabled: !!cfg?.enabled,
-      displayId: cfg?.displayId ?? readOverlayConfig().displayId
+      displayId: cfg?.displayId ?? prev.displayId,
+      destinyOnly: typeof cfg?.destinyOnly === 'boolean' ? cfg.destinyOnly : prev.destinyOnly
     }
     saveOverlayConfig(next)
     if (next.enabled) showOverlay(next)

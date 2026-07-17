@@ -208,10 +208,14 @@ export default function LiveActivity() {
                   )
                 })}
               </ul>
-            ) : (
+            ) : live.fireteamSource === 'unauthenticated' ? (
               <p className="live-muted">
-                Fireteam details aren’t available.
+                Sign in with your Bungie account to see your live fireteam.
               </p>
+            ) : live.fireteamSource === 'solo' ? (
+              <p className="live-muted">Flying solo — no fireteam right now.</p>
+            ) : (
+              <p className="live-muted">Fireteam details aren’t available.</p>
             )}
           </section>
         </>

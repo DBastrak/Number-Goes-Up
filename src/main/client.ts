@@ -1,11 +1,16 @@
 // Shared Bungie HTTP client. Every request carries the X-API-Key from .env.
 // Retries on rate-limiting / throttling so large accounts don't silently undercount.
 
-export function apiHeaders() {
-  return {
+// Every request carries the X-API-Key. A `token` (OAuth access token) adds the
+// Authorization: Bearer header so private components (e.g. profileTransitoryData /
+// fireteam) and, later, inventory writes are readable for the signed-in account.
+export function apiHeaders(token?: string | null) {
+  const headers: Record<string, string> = {
     'X-API-Key': process.env.bungieAPI || '',
     'Content-Type': 'application/json'
   }
+  if (token) headers.Authorization = `Bearer ${token}`
+  return headers
 }
 
 // PlatformErrorCodes that indicate throttling.
@@ -15,7 +20,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 const backoff = (attempt) => Math.min(1000 * 2 ** attempt, 8000) + Math.floor(Math.random() * 250)
 
 // POST with the same throttle-retry behaviour as bungieGet.
-export async function bungiePost(url, body, { retries = 6 } = {}) {
+export async function bungiePost(url, body, { retries = 6, token = null } = {}) {
   let attempt = 0
   for (;;) {
     let res
@@ -23,7 +28,7 @@ export async function bungiePost(url, body, { retries = 6 } = {}) {
     try {
       res = await fetch(url, {
         method: 'POST',
-        headers: apiHeaders(),
+        headers: apiHeaders(token),
         body: JSON.stringify(body || {})
       })
       try {
@@ -51,14 +56,14 @@ export async function bungiePost(url, body, { retries = 6 } = {}) {
   }
 }
 
-export async function bungieGet(url, { retries = 6 } = {}) {
+export async function bungieGet(url, { retries = 6, token = null } = {}) {
   let attempt = 0
 
   for (;;) {
     let res
     let body = null
     try {
-      res = await fetch(url, { method: 'GET', headers: apiHeaders() })
+      res = await fetch(url, { method: 'GET', headers: apiHeaders(token) })
       try {
         body = await res.json()
       } catch {
@@ -87,4 +92,9 @@ export async function bungieGet(url, { retries = 6 } = {}) {
     }
     return { status: res.status, body }
   }
+}
+
+// Sugar for an authenticated GET (Bearer token in addition to the API key).
+export function bungieGetAuth(url, token, opts = {}) {
+  return bungieGet(url, { ...opts, token })
 }

@@ -379,6 +379,12 @@ html.is-wallpaper .topnav {
 .notif-item:hover {
   background: var(--bg-2);
 }
+.notif-item-link {
+  cursor: pointer;
+}
+.notif-item-link:active {
+  background: var(--bg-3);
+}
 .notif-icon {
   font-size: 16px;
 }

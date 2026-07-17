@@ -1,6 +1,6 @@
 import { formatDate } from '../utils/format'
 
-export default function Notifications({ items = [], onClear, onClose }) {
+export default function Notifications({ items = [], onClear, onClose, onOpen }) {
   return (
     <>
       <div className="notif-backdrop" onClick={onClose} />
@@ -25,7 +25,12 @@ export default function Notifications({ items = [], onClear, onClose }) {
         ) : (
           <ul className="notif-list">
             {items.map((it, i) => (
-              <li key={`${it.instanceId}-${i}`} className="notif-item">
+              <li
+                key={`${it.instanceId}-${i}`}
+                className={`notif-item${it.instanceId && onOpen ? ' notif-item-link' : ''}`}
+                onClick={it.instanceId && onOpen ? () => onOpen(it.instanceId) : undefined}
+                title={it.instanceId && onOpen ? 'View carnage report' : undefined}
+              >
                 <span className="notif-icon" aria-hidden="true">
                   {it.mode === 'raid' ? '⚔' : '☠'}
                 </span>
