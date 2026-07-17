@@ -33,6 +33,17 @@ export interface Api {
   // Polls the player's current live activity (timer, name, loadout, fireteam).
   getLiveActivity: () => Promise<any>
 
+  // Inventory manager (requires a Bungie-authenticated session).
+  // `inventoryGet` returns { ok, characters, columns } — vault + per-character weapons/armour.
+  // `inventoryTransfer` moves one item; `from`/`to` are 'vault' or a characterId.
+  inventoryGet: () => Promise<any>
+  inventoryTransfer: (params: {
+    itemHash: number
+    itemId: string
+    from: string
+    to: string
+  }) => Promise<{ ok: boolean; error?: string }>
+
   // Following (other tracked accounts).
   followingList: () => Promise<any>
   followingAdd: (username: string) => Promise<any>
@@ -111,6 +122,9 @@ const api: Api = {
   getPgcr: (instanceId) => ipcRenderer.invoke('get-pgcr', instanceId),
 
   getLiveActivity: () => ipcRenderer.invoke('get-live-activity'),
+
+  inventoryGet: () => ipcRenderer.invoke('inventory:get'),
+  inventoryTransfer: (params) => ipcRenderer.invoke('inventory:transfer', params),
 
   // Following (other tracked accounts).
   followingList: () => ipcRenderer.invoke('following:list'),

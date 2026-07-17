@@ -46,13 +46,28 @@ Get these from the [Bungie developer portal](https://www.bungie.net/en/Applicati
 3. Set the **Redirect URL** to `https://localhost/` (or your own https URL) and mirror it
    in `bungieRedirectUri`. The app never serves this URL — it intercepts the redirect in
    the sign-in window to read the auth code.
-4. Under **Scope**, enable the read scopes you want (e.g. *Read your Destiny vault and
-   character inventory*). Phase 1 only needs read access; item transfers would add the
-   *Move or equip Destiny gear* scope later.
+4. Under **Scope**, enable:
+   - *Read your Destiny vault and character inventory* — needed to view the inventory.
+   - *Move or equip Destiny gear* — needed for the inventory manager's drag-to-transfer.
 5. Copy the **OAuth client_id** and **client_secret** into `.env`.
+
+If you add the *Move or equip* scope after already signing in, **sign out and sign back
+in** — the access token only carries the scopes granted at authorization time.
 
 OAuth tokens are stored in `userData/oauth.json`, encrypted at rest via the OS keychain
 (DPAPI on Windows) when available.
+
+### Inventory manager
+
+The **Inventory** tab (Bungie sign-in required) shows your vault and each character's
+weapons and armour in DIM-style columns. Drag a tile to another column to move it
+(character→character routes through the vault automatically); hover a tile for its live
+stats and perks; the search box filters by item or perk name.
+
+On first open it downloads the Destiny item database (`DestinyInventoryItemDefinition` plus
+stat/damage tables), slims it to just what the UI needs, and caches it in `userData`
+(`manifest-*.json`). This is a one-time download that refreshes automatically after each
+game patch (detected via the manifest version).
 
 ## Project structure
 

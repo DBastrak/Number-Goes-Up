@@ -13,6 +13,7 @@ import {
   getFullClearCount
 } from './stats'
 import { getLiveActivity } from './live'
+import { getInventory, transferItem } from './inventory'
 import {
   startOAuthLogin,
   getAccessToken,
@@ -386,6 +387,33 @@ app.whenReady().then(() => {
       return await getLiveActivity(session, token)
     } catch (err) {
       console.error('[main] get-live-activity failed:', err)
+      return { ok: false, error: err.message }
+    }
+  })
+
+  // --- Inventory manager (requires a Bungie-authenticated session) ---
+  // Read all characters' + vault weapons/armour with live stats and perks.
+  ipcMain.handle('inventory:get', async () => {
+    const session = readSession()
+    if (!session) return { ok: false, error: 'No session — please log in first.' }
+    try {
+      const token = await getAccessToken()
+      return await getInventory(session, token)
+    } catch (err) {
+      console.error('[main] inventory:get failed:', err)
+      return { ok: false, error: err.message }
+    }
+  })
+
+  // Move an item between vault and characters (character→character hops via the vault).
+  ipcMain.handle('inventory:transfer', async (_event, params) => {
+    const session = readSession()
+    if (!session) return { ok: false, error: 'No session — please log in first.' }
+    try {
+      const token = await getAccessToken()
+      return await transferItem(session, token, params)
+    } catch (err) {
+      console.error('[main] inventory:transfer failed:', err)
       return { ok: false, error: err.message }
     }
   })
