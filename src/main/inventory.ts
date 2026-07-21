@@ -37,6 +37,9 @@ const TIER_NAME = { 6: 'Exotic', 5: 'Legendary', 4: 'Rare', 3: 'Uncommon', 2: 'C
 // transferStatus is a bitmask; bit 1 (value 1) = item is equipped.
 const EQUIPPED_FLAG = 1
 
+// Postmaster (Lost Items) bucket — items sitting in it report this as their live bucketHash.
+const POSTMASTER_BUCKET = 215593132
+
 const iconUrl = (path) => (path ? ICON + path : null)
 
 // Build one UI item from a raw inventory entry + the instanced component maps.
@@ -120,6 +123,30 @@ function buildItem(entry, location, instances, statsData, socketsData) {
   }
 }
 
+// Lighter builder for postmaster items — includes every item type (engrams, materials,
+// gear), not just weapons/armour, since the postmaster holds anything.
+function buildPostmasterItem(entry, instances) {
+  const def = itemDef(entry.itemHash)
+  if (!def) return null
+  const iid = entry.itemInstanceId || null
+  const inst = iid ? instances?.[iid] : null
+  const isGear = WEAPON_BUCKETS.has(def.bucket) || ARMOR_BUCKETS.has(def.bucket)
+  return {
+    instanceId: iid,
+    hash: entry.itemHash,
+    name: def.name,
+    icon: iconUrl(def.icon),
+    watermark: iconUrl(def.watermark),
+    tier: def.tier,
+    tierName: TIER_NAME[def.tier] || '',
+    bucket: def.bucket, // home slot the item lands in when pulled (for room-making)
+    power: inst?.primaryStat?.value ?? null,
+    quantity: entry.quantity > 1 ? entry.quantity : null,
+    // Can continue on to the vault only if it's transferable instanced gear.
+    vaultable: isGear && !!iid && !def.noTransfer
+  }
+}
+
 export async function getInventory(session, accessToken) {
   if (!accessToken) {
     return { ok: false, error: 'Sign in with your Bungie account to use the inventory manager.' }
@@ -157,7 +184,11 @@ export async function getInventory(session, accessToken) {
     .sort((a, b) => a.classType - b.classType)
 
   const columns = { vault: [] as any[] }
-  for (const c of characters) columns[c.id] = []
+  const postmaster = {} as Record<string, any[]>
+  for (const c of characters) {
+    columns[c.id] = []
+    postmaster[c.id] = []
+  }
 
   const push = (entry, location) => {
     const item = buildItem(entry, location, instances, statsData, socketsData)
@@ -167,11 +198,19 @@ export async function getInventory(session, accessToken) {
   // Vault (profile inventory).
   for (const entry of resp.profileInventory?.data?.items || []) push(entry, 'vault')
 
-  // Each character's inventory + equipped items.
+  // Each character's inventory + equipped items. Postmaster (Lost Items) entries are split
+  // out into their own list rather than showing in the character's normal slots.
   const charInv = resp.characterInventories?.data || {}
   const charEquip = resp.characterEquipment?.data || {}
   for (const c of characters) {
-    for (const entry of charInv[c.id]?.items || []) push(entry, c.id)
+    for (const entry of charInv[c.id]?.items || []) {
+      if (entry.bucketHash === POSTMASTER_BUCKET) {
+        const pm = buildPostmasterItem(entry, instances)
+        if (pm) postmaster[c.id].push(pm)
+      } else {
+        push(entry, c.id)
+      }
+    }
     for (const entry of charEquip[c.id]?.items || []) push(entry, c.id)
   }
 
@@ -185,7 +224,7 @@ export async function getInventory(session, accessToken) {
     )
   }
 
-  return { ok: true, characters, columns }
+  return { ok: true, characters, columns, postmaster }
 }
 
 // One TransferItem call. transferToVault=true pulls a character's item into the vault;
@@ -227,6 +266,32 @@ export async function transferItem(session, accessToken, { itemHash, itemId, fro
       // character → vault → character
       await transferOnce(accessToken, { membershipType, itemHash, itemId, characterId: from, toVault: true })
       await transferOnce(accessToken, { membershipType, itemHash, itemId, characterId: to, toVault: false })
+    }
+    return { ok: true }
+  } catch (err) {
+    return { ok: false, error: (err as Error).message }
+  }
+}
+
+// Pull an item out of a character's postmaster (Lost Items) into their inventory, and — for
+// transferable gear when `toVault` is set — continue on to the vault.
+export async function pullFromPostmaster(
+  session,
+  accessToken,
+  { itemHash, itemId, characterId, toVault }
+) {
+  if (!accessToken) return { ok: false, error: 'Sign in with your Bungie account first.' }
+  const membershipType = session.membershipType
+  try {
+    const { body } = await bungiePost(
+      `${BASE}/Destiny2/Actions/Items/PullFromPostmaster/`,
+      { itemReferenceHash: itemHash, stackSize: 1, itemId: itemId || 0, characterId, membershipType },
+      { token: accessToken }
+    )
+    const ec = body?.ErrorCode
+    if (ec !== 1) throw new Error(body?.Message || body?.ErrorStatus || `error ${ec}`)
+    if (toVault && itemId) {
+      await transferOnce(accessToken, { membershipType, itemHash, itemId, characterId, toVault: true })
     }
     return { ok: true }
   } catch (err) {

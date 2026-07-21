@@ -108,6 +108,7 @@ export default function Inventory({ authenticated }) {
   const [tip, setTip] = useState(null) // { item, x, y, side }
   const [focus, setFocus] = useState(null) // characterId to focus on (vault + that char only)
   const [wishlist, setWishlist] = useState([]) // for the 👍 overlay on matching weapons
+  const [postmasterCols, setPostmasterCols] = useState(() => new Set()) // char cols showing postmaster
   const toastTimer = useRef(null)
 
   useEffect(() => {
@@ -134,7 +135,7 @@ export default function Inventory({ authenticated }) {
     try {
       const res = await window.api.inventoryGet()
       if (res?.ok) {
-        setData({ characters: res.characters, columns: res.columns })
+        setData({ characters: res.characters, columns: res.columns, postmaster: res.postmaster || {} })
         setState('done')
       } else {
         setError(res?.error || 'Failed to load inventory.')
@@ -247,6 +248,87 @@ export default function Inventory({ authenticated }) {
     }
   }
 
+  function togglePostmaster(colId) {
+    setPostmasterCols((prev) => {
+      const next = new Set(prev)
+      if (next.has(colId)) next.delete(colId)
+      else next.add(colId)
+      return next
+    })
+  }
+
+  // Pull a postmaster item to the character (toVault=false) or on to the vault. A postmaster
+  // pull first lands the item in the character's slot, so a to-vault pull into a FULL slot
+  // would fail — in that case evict the slot's last item to the vault first, then both the
+  // evicted item and the pulled item end up in the vault. Optimistic, with revert on failure.
+  async function pullPostmaster(item, charId, toVault) {
+    if (busy) return
+    const snapshot = data
+
+    let evict = null
+    if (toVault && item.bucket) {
+      const SLOT_CAP = 9
+      const slotItems = (data.columns[charId] || []).filter(
+        (i) => i.bucket === item.bucket && !i.equipped
+      )
+      if (slotItems.length >= SLOT_CAP) {
+        const evictable = slotItems.filter((i) => i.transferable)
+        evict = evictable[evictable.length - 1] || null
+        if (!evict) {
+          flash('That slot is full and nothing in it can be moved to make room.')
+          return
+        }
+      }
+    }
+
+    setData((prev) => {
+      const postmaster = { ...prev.postmaster }
+      postmaster[charId] = (postmaster[charId] || []).filter((i) => i !== item)
+      const columns = { ...prev.columns }
+      if (evict) {
+        columns[charId] = columns[charId].filter((i) => i.instanceId !== evict.instanceId)
+        columns.vault = [...columns.vault, { ...evict, location: 'vault', equipped: false }]
+      }
+      return { ...prev, postmaster, columns }
+    })
+    setBusy(true)
+    try {
+      if (evict) {
+        const r = await window.api.inventoryTransfer({
+          itemHash: evict.hash,
+          itemId: evict.instanceId,
+          from: charId,
+          to: 'vault'
+        })
+        if (!r?.ok) {
+          setData(snapshot)
+          flash(r?.error ? `Couldn't make room: ${r.error}` : "Couldn't make room in that slot.")
+          load(true)
+          return
+        }
+      }
+      const res = await window.api.inventoryPullPostmaster({
+        itemHash: item.hash,
+        itemId: item.instanceId,
+        characterId: charId,
+        toVault
+      })
+      if (!res?.ok) {
+        setData(snapshot)
+        flash(res?.error || 'Pull failed.')
+        load(true)
+      } else {
+        load(true)
+      }
+    } catch (err) {
+      setData(snapshot)
+      flash(err.message || 'Pull failed.')
+      load(true)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   function showTip(item, e) {
     const r = e.currentTarget.getBoundingClientRect()
     // Flip horizontally when there isn't room on the right; flip UP when the tile sits in
@@ -335,6 +417,8 @@ export default function Inventory({ authenticated }) {
               wishlist.length && isWishlisted(i, wishlist) ? { ...i, wished: true } : i
             )
             const isVault = col.id === 'vault'
+            const pmItems = data.postmaster?.[col.id] || []
+            const showingPostmaster = !isVault && postmasterCols.has(col.id)
             const renderSection = (s, mode = 'grid') => (
               <ItemSection
                 key={s.key}
@@ -377,7 +461,18 @@ export default function Inventory({ authenticated }) {
                     <span className="inv-col-label">{col.label}</span>
                     <span className="inv-col-sub">{col.sub}</span>
                   </div>
-                  <span className="inv-col-count">{items.length}</span>
+                  <span className="inv-col-count">
+                    {showingPostmaster ? pmItems.length : items.length}
+                  </span>
+                  {!isVault && (
+                    <button
+                      className={`inv-pm-btn ${showingPostmaster ? 'is-on' : ''}`}
+                      onClick={() => togglePostmaster(col.id)}
+                      title="Postmaster (Lost Items)"
+                    >
+                      📦{pmItems.length ? ` ${pmItems.length}` : ''}
+                    </button>
+                  )}
                   {!isVault &&
                     (focus === col.id ? (
                       <button
@@ -398,26 +493,61 @@ export default function Inventory({ authenticated }) {
                     ))}
                 </div>
 
-                {isVault
-                  ? groupVault(items)
-                      // In focus mode, keep all weapon slots but only the focused class's
-                      // armour (armour supergroups are keyed "a{classType}").
-                      .filter(
-                        (sg) =>
-                          focusedClassType == null ||
-                          sg.key[0] !== 'a' ||
-                          sg.key === `a${focusedClassType}`
-                      )
-                      .map((sg) => (
-                        <div key={sg.key} className="inv-supergroup">
-                          <div className="inv-supergroup-title">{sg.label}</div>
-                          {sg.subs.map((s) => renderSection(s))}
-                        </div>
-                      ))
-                  : groupBySlot(items).map((g) =>
-                      renderSection(g, focus === col.id ? 'focus' : 'inline')
-                    )}
-                {items.length === 0 && <div className="inv-empty">{q ? 'No matches' : 'Nothing here'}</div>}
+                {showingPostmaster ? (
+                  <div className="inv-pm-list">
+                    {pmItems.map((it, i) => (
+                      <div key={it.instanceId || `${it.hash}-${i}`} className="inv-pm-row">
+                        <span className={`inv-pm-icon ${tierClass(it.tier)}`} title={it.name}>
+                          {it.icon && <img src={it.icon} alt="" />}
+                          {it.watermark && <img className="inv-pm-wm" src={it.watermark} alt="" />}
+                          {it.power != null && <span className="inv-tile-power">{it.power}</span>}
+                          {it.quantity && <span className="inv-pm-qty">×{it.quantity}</span>}
+                        </span>
+                        <span className="inv-pm-name">{it.name}</span>
+                        <span className="inv-pm-actions">
+                          <button
+                            className="inv-pm-act"
+                            onClick={() => pullPostmaster(it, col.id, false)}
+                            title="Pull to this character"
+                          >
+                            Char
+                          </button>
+                          {it.vaultable && (
+                            <button
+                              className="inv-pm-act"
+                              onClick={() => pullPostmaster(it, col.id, true)}
+                              title="Pull and send to the vault"
+                            >
+                              Vault
+                            </button>
+                          )}
+                        </span>
+                      </div>
+                    ))}
+                    {pmItems.length === 0 && <div className="inv-empty">Postmaster is empty</div>}
+                  </div>
+                ) : isVault ? (
+                  groupVault(items)
+                    // In focus mode, keep all weapon slots but only the focused class's
+                    // armour (armour supergroups are keyed "a{classType}").
+                    .filter(
+                      (sg) =>
+                        focusedClassType == null ||
+                        sg.key[0] !== 'a' ||
+                        sg.key === `a${focusedClassType}`
+                    )
+                    .map((sg) => (
+                      <div key={sg.key} className="inv-supergroup">
+                        <div className="inv-supergroup-title">{sg.label}</div>
+                        {sg.subs.map((s) => renderSection(s))}
+                      </div>
+                    ))
+                ) : (
+                  groupBySlot(items).map((g) => renderSection(g, focus === col.id ? 'focus' : 'inline'))
+                )}
+                {!showingPostmaster && items.length === 0 && (
+                  <div className="inv-empty">{q ? 'No matches' : 'Nothing here'}</div>
+                )}
               </section>
             )
           })}

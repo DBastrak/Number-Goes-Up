@@ -13,7 +13,7 @@ import {
   getFullClearCount
 } from './stats'
 import { getLiveActivity } from './live'
-import { getInventory, transferItem } from './inventory'
+import { getInventory, transferItem, pullFromPostmaster } from './inventory'
 import { ensureManifest, getWeaponCatalog } from './manifest'
 import { readWishlist, saveWishlistEntry, removeWishlistEntry } from './wishlist'
 import {
@@ -416,6 +416,19 @@ app.whenReady().then(() => {
       return await transferItem(session, token, params)
     } catch (err) {
       console.error('[main] inventory:transfer failed:', err)
+      return { ok: false, error: err.message }
+    }
+  })
+
+  // Pull an item from a character's postmaster (optionally continuing to the vault).
+  ipcMain.handle('inventory:pull-postmaster', async (_event, params) => {
+    const session = readSession()
+    if (!session) return { ok: false, error: 'No session — please log in first.' }
+    try {
+      const token = await getAccessToken()
+      return await pullFromPostmaster(session, token, params)
+    } catch (err) {
+      console.error('[main] inventory:pull-postmaster failed:', err)
       return { ok: false, error: err.message }
     }
   })

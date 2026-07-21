@@ -43,6 +43,13 @@ export interface Api {
     from: string
     to: string
   }) => Promise<{ ok: boolean; error?: string }>
+  // Pull an item from a character's postmaster; `toVault` continues it on to the vault.
+  inventoryPullPostmaster: (params: {
+    itemHash: number
+    itemId: string | null
+    characterId: string
+    toVault: boolean
+  }) => Promise<{ ok: boolean; error?: string }>
 
   // Weapon catalog (random-roll weapons + perk pools) and the god-roll wishlist.
   weaponCatalog: () => Promise<any>
@@ -131,6 +138,7 @@ const api: Api = {
 
   inventoryGet: () => ipcRenderer.invoke('inventory:get'),
   inventoryTransfer: (params) => ipcRenderer.invoke('inventory:transfer', params),
+  inventoryPullPostmaster: (params) => ipcRenderer.invoke('inventory:pull-postmaster', params),
 
   weaponCatalog: () => ipcRenderer.invoke('weapon:catalog'),
   wishlistList: () => ipcRenderer.invoke('wishlist:list'),
