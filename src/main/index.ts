@@ -14,6 +14,8 @@ import {
 } from './stats'
 import { getLiveActivity } from './live'
 import { getInventory, transferItem } from './inventory'
+import { ensureManifest, getWeaponCatalog } from './manifest'
+import { readWishlist, saveWishlistEntry, removeWishlistEntry } from './wishlist'
 import {
   startOAuthLogin,
   getAccessToken,
@@ -417,6 +419,23 @@ app.whenReady().then(() => {
       return { ok: false, error: err.message }
     }
   })
+
+  // --- Weapon catalog + wishlist ---
+  // The full random-roll weapon catalog (from the manifest; no account needed).
+  ipcMain.handle('weapon:catalog', async () => {
+    try {
+      const man = await ensureManifest()
+      if (!man.ok) return { ok: false, error: man.error || 'Item database unavailable.' }
+      return { ok: true, weapons: getWeaponCatalog() }
+    } catch (err) {
+      console.error('[main] weapon:catalog failed:', err)
+      return { ok: false, error: err.message }
+    }
+  })
+
+  ipcMain.handle('wishlist:list', () => ({ ok: true, list: readWishlist() }))
+  ipcMain.handle('wishlist:save', (_event, entry) => saveWishlistEntry(entry))
+  ipcMain.handle('wishlist:remove', (_event, weaponHash) => removeWishlistEntry(weaponHash))
 
   // --- Overlay timer ---
   // Write dragged positions from the overlay window back to disk.

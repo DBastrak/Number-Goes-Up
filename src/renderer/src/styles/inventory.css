@@ -329,6 +329,17 @@
   padding: 0 2px;
   border-bottom-left-radius: 4px;
 }
+.inv-tile-wish {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  font-size: 11px;
+  line-height: 1;
+  padding: 1px 2px;
+  background: rgba(0, 0, 0, 0.6);
+  border-top-right-radius: 4px;
+  pointer-events: none;
+}
 
 /* Tier borders. */
 .inv-tile.is-exotic {

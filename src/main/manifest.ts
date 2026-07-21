@@ -21,10 +21,15 @@ const ROOT = 'https://www.bungie.net'
 const ITEM_TABLE = 'DestinyInventoryItemDefinition'
 const STAT_TABLE = 'DestinyStatDefinition'
 const DAMAGE_TABLE = 'DestinyDamageTypeDefinition'
+const PLUGSET_TABLE = 'DestinyPlugSetDefinition' // random-roll perk pools per socket
+const COLLECTIBLE_TABLE = 'DestinyCollectibleDefinition' // drop/source strings
+
+// Socket category that holds a weapon's perk columns (barrel, magazine, traits, origin).
+const WEAPON_PERKS_CATEGORY = 4241085061
 
 // Bump when the slim ItemDef shape changes so existing caches re-derive instead of
 // silently missing new fields (the cache is otherwise only refreshed on a game patch).
-const SCHEMA = 2
+const SCHEMA = 5
 
 type ItemDef = {
   name: string
@@ -40,10 +45,32 @@ type ItemDef = {
   noTransfer: boolean
 }
 
+// A weapon catalog entry: the weapon plus its per-column random-roll perk pools.
+export type WeaponPerk = { hash: number; name: string; icon: string | null }
+export type WeaponCatalogEntry = {
+  hash: string
+  name: string
+  icon: string | null
+  watermark: string | null
+  tier: number
+  typeName: string
+  source: string | null
+  columns: { label: string; plugs: WeaponPerk[] }[]
+  element?: string | null // damage type: Kinetic/Arc/Solar/Void/Stasis/Strand
+  slot?: string | null // Kinetic / Energy / Power (ammo slot)
+}
+
+// DamageType enum -> element name; weapon bucket -> ammo slot. Both stable.
+const DAMAGE_NAME = { 1: 'Kinetic', 2: 'Arc', 3: 'Solar', 4: 'Void', 6: 'Stasis', 7: 'Strand' }
+const SLOT_BY_BUCKET = { 1498876634: 'Kinetic', 2465295065: 'Energy', 953998645: 'Power' }
+
 let items: Record<string, ItemDef> = {}
 let stats: Record<string, string> = {} // statHash -> name
 let damage: Record<string, { name: string; icon: string | null }> = {}
+let weapons: WeaponCatalogEntry[] = []
 let loadedVersion: string | null = null
+
+const iconUrl = (p) => (p ? ROOT + p : null)
 
 // A single in-flight ensure() so concurrent inventory loads don't double-download.
 let ensuring: Promise<{ ok: boolean; error?: string }> | null = null
@@ -70,6 +97,7 @@ function loadSlimFromDisk(): boolean {
     items = JSON.parse(readFileSync(slimPath('items'), 'utf8'))
     stats = JSON.parse(readFileSync(slimPath('stats'), 'utf8'))
     damage = JSON.parse(readFileSync(slimPath('damage'), 'utf8'))
+    weapons = JSON.parse(readFileSync(slimPath('weapons'), 'utf8'))
     return true
   } catch {
     return false
@@ -126,6 +154,76 @@ function slimDamage(table: Record<string, any>) {
   return out
 }
 
+// Build the weapon catalog: every legendary/exotic weapon with its perk columns (barrel,
+// magazine, traits, origin) resolved from the Weapon Perks socket category's plug sets.
+function buildWeaponCatalog(itemTable, plugSetTable, collectibleTable): WeaponCatalogEntry[] {
+  const out: WeaponCatalogEntry[] = []
+  for (const hash in itemTable) {
+    const d = itemTable[hash]
+    // Weapons only, legendary (5) + exotic (6), with a name.
+    if (d.itemType !== 3 || (d.inventory?.tierType ?? 0) < 5 || !d.displayProperties?.name) continue
+    const sockets = d.sockets
+    if (!sockets?.socketEntries || !sockets.socketCategories) continue
+    const cat = sockets.socketCategories.find((c) => c.socketCategoryHash === WEAPON_PERKS_CATEGORY)
+    if (!cat?.socketIndexes) continue
+
+    const columns: WeaponCatalogEntry['columns'] = []
+    for (const idx of cat.socketIndexes) {
+      const entry = sockets.socketEntries[idx]
+      if (!entry) continue
+
+      const plugs: WeaponPerk[] = []
+      const seen = new Set<number>()
+      const add = (ph) => {
+        if (!ph || seen.has(ph)) return
+        const pd = itemTable[ph]
+        const pname = pd?.displayProperties?.name
+        if (!pname) return
+        seen.add(ph)
+        plugs.push({ hash: ph, name: pname, icon: iconUrl(pd.displayProperties.icon) })
+      }
+      // Random pool preferred (world drops), else the fixed pool; then any inline reusable
+      // plugs; then the single fixed plug — some sockets (e.g. a fixed Origin Trait) have
+      // ONLY that, and would otherwise be missed.
+      const setHash = entry.randomizedPlugSetHash || entry.reusablePlugSetHash
+      const set = setHash ? plugSetTable[setHash] : null
+      if (set?.reusablePlugItems) {
+        for (const p of set.reusablePlugItems) {
+          if (p.currentlyCanRoll === false) continue // only currently-obtainable perks
+          add(p.plugItemHash)
+        }
+      }
+      if (Array.isArray(entry.reusablePlugItems)) for (const p of entry.reusablePlugItems) add(p.plugItemHash)
+      if (!plugs.length && entry.singleInitialItemHash) add(entry.singleInitialItemHash)
+      if (plugs.length === 0) continue
+
+      // Label from the socket's default plug type (reliable for "Origin Trait" / trackers),
+      // falling back to the first resolved plug's type.
+      const label =
+        itemTable[entry.singleInitialItemHash]?.itemTypeDisplayName ||
+        itemTable[plugs[0].hash]?.itemTypeDisplayName ||
+        `Column ${columns.length + 1}`
+      columns.push({ label, plugs })
+    }
+
+    // Keep any weapon with at least one resolvable perk column.
+    if (columns.length === 0) continue
+
+    out.push({
+      hash,
+      name: d.displayProperties.name,
+      icon: iconUrl(d.displayProperties.icon),
+      watermark: iconUrl(d.iconWatermark || d.quality?.displayVersionWatermarkIcons?.[0]),
+      tier: d.inventory?.tierType ?? 0,
+      typeName: d.itemTypeDisplayName || '',
+      source: d.collectibleHash ? collectibleTable[d.collectibleHash]?.sourceString || null : null,
+      columns
+    })
+  }
+  out.sort((a, b) => a.name.localeCompare(b.name))
+  return out
+}
+
 // Ensure the slim tables are loaded and current. Returns quickly when already in memory /
 // unchanged on disk; otherwise downloads + slims + caches. Safe to call on every load.
 export function ensureManifest(): Promise<{ ok: boolean; error?: string }> {
@@ -153,21 +251,28 @@ export function ensureManifest(): Promise<{ ok: boolean; error?: string }> {
       }
 
       // Download + slim the tables we need, then persist.
-      const [itemTable, statTable, damageTable] = await Promise.all([
+      const [itemTable, statTable, damageTable, plugSetTable, collectibleTable] = await Promise.all([
         downloadTable(paths[ITEM_TABLE]),
         downloadTable(paths[STAT_TABLE]),
-        downloadTable(paths[DAMAGE_TABLE])
+        downloadTable(paths[DAMAGE_TABLE]),
+        downloadTable(paths[PLUGSET_TABLE]),
+        downloadTable(paths[COLLECTIBLE_TABLE])
       ])
       items = slimItems(itemTable)
       stats = slimStats(statTable)
       damage = slimDamage(damageTable)
+      weapons = buildWeaponCatalog(itemTable, plugSetTable, collectibleTable)
 
       writeFileSync(slimPath('items'), JSON.stringify(items))
       writeFileSync(slimPath('stats'), JSON.stringify(stats))
       writeFileSync(slimPath('damage'), JSON.stringify(damage))
+      writeFileSync(slimPath('weapons'), JSON.stringify(weapons))
       writeFileSync(versionPath(), JSON.stringify({ version, schema: SCHEMA }))
       loadedVersion = version
-      console.log('[manifest] cached', Object.keys(items).length, 'items @', version)
+      console.log(
+        '[manifest] cached', Object.keys(items).length, 'items,',
+        weapons.length, 'random-roll weapons @', version
+      )
       return { ok: true }
     } catch (err) {
       console.error('[manifest] ensure failed:', (err as Error).message)
@@ -193,4 +298,15 @@ export function statName(hash: number | string): string | null {
 }
 export function damageDef(hash: number | string) {
   return damage[String(hash)] || null
+}
+export function getWeaponCatalog(): WeaponCatalogEntry[] {
+  // Attach element + slot from the slim item table (avoids rebuilding the cached catalog).
+  return weapons.map((w) => {
+    const d = items[w.hash]
+    return {
+      ...w,
+      element: d ? DAMAGE_NAME[d.damage] || null : null,
+      slot: d ? SLOT_BY_BUCKET[d.bucket] || null : null
+    }
+  })
 }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { isWishlisted } from '../utils/wishlist'
 import '../styles/inventory.css'
 
 // DIM-style inventory: a Vault column plus one column per character. Drag a weapon/armour
@@ -106,7 +107,19 @@ export default function Inventory({ authenticated }) {
   const [toast, setToast] = useState('')
   const [tip, setTip] = useState(null) // { item, x, y, side }
   const [focus, setFocus] = useState(null) // characterId to focus on (vault + that char only)
+  const [wishlist, setWishlist] = useState([]) // for the 👍 overlay on matching weapons
   const toastTimer = useRef(null)
+
+  useEffect(() => {
+    let cancelled = false
+    window.api
+      ?.wishlistList?.()
+      .then((r) => !cancelled && r?.ok && setWishlist(r.list))
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const flash = useCallback((msg) => {
     setToast(msg)
@@ -160,15 +173,53 @@ export default function Inventory({ authenticated }) {
 
     const from = item.location
     const snapshot = data
-    // Optimistic move.
+
+    // If the destination character's slot is already full, evict its last (lowest-power)
+    // item to the vault first to make room. Weapon/armour character slots hold 9
+    // non-equipped items (a 10th, the equipped one, sits separately).
+    const SLOT_CAP = 9
+    let evict = null
+    if (toCol !== 'vault') {
+      const slotItems = (data.columns[toCol] || []).filter(
+        (i) => i.bucket === item.bucket && !i.equipped
+      )
+      if (slotItems.length >= SLOT_CAP) {
+        const evictable = slotItems.filter((i) => i.transferable)
+        evict = evictable[evictable.length - 1] || null
+        if (!evict) {
+          flash('That slot is full and nothing in it can be moved out.')
+          return
+        }
+      }
+    }
+
+    // Optimistic update: evict to the vault (if needed), then bring the new item in.
     setData((prev) => {
       const columns = { ...prev.columns }
-      columns[from] = columns[from].filter((i) => i.instanceId !== item.instanceId)
+      if (evict) {
+        columns[toCol] = columns[toCol].filter((i) => i.instanceId !== evict.instanceId)
+        columns.vault = [...columns.vault, { ...evict, location: 'vault', equipped: false }]
+      }
+      columns[from] = (columns[from] || []).filter((i) => i.instanceId !== item.instanceId)
       columns[toCol] = [...columns[toCol], { ...item, location: toCol, equipped: false }]
       return { ...prev, columns }
     })
     setBusy(true)
     try {
+      if (evict) {
+        const r = await window.api.inventoryTransfer({
+          itemHash: evict.hash,
+          itemId: evict.instanceId,
+          from: toCol,
+          to: 'vault'
+        })
+        if (!r?.ok) {
+          setData(snapshot)
+          flash(r?.error ? `Couldn't make room: ${r.error}` : "Couldn't make room in that slot.")
+          load(true)
+          return
+        }
+      }
       const res = await window.api.inventoryTransfer({
         itemHash: item.hash,
         itemId: item.instanceId,
@@ -280,7 +331,9 @@ export default function Inventory({ authenticated }) {
       {data && (
         <div className={`inv-board ${busy ? 'is-busy' : ''}`}>
           {visibleColumns.map((col) => {
-            const items = filterCol(data.columns[col.id] || [])
+            const items = filterCol(data.columns[col.id] || []).map((i) =>
+              wishlist.length && isWishlisted(i, wishlist) ? { ...i, wished: true } : i
+            )
             const isVault = col.id === 'vault'
             const renderSection = (s, mode = 'grid') => (
               <ItemSection
@@ -394,6 +447,11 @@ function Tile({ item, onDragStart, onDragEnd, onTip, onTipEnd }) {
       {item.damageIcon && <img className="inv-tile-dmg" src={item.damageIcon} alt="" draggable={false} />}
       {item.power != null && <span className="inv-tile-power">{item.power}</span>}
       {item.equipped && <span className="inv-tile-equipped" title="Equipped">✓</span>}
+      {item.wished && (
+        <span className="inv-tile-wish" title="Matches a wishlisted roll">
+          👍
+        </span>
+      )}
     </div>
   )
 }

@@ -44,6 +44,12 @@ export interface Api {
     to: string
   }) => Promise<{ ok: boolean; error?: string }>
 
+  // Weapon catalog (random-roll weapons + perk pools) and the god-roll wishlist.
+  weaponCatalog: () => Promise<any>
+  wishlistList: () => Promise<any>
+  wishlistSave: (entry: any) => Promise<any>
+  wishlistRemove: (weaponHash: string) => Promise<any>
+
   // Following (other tracked accounts).
   followingList: () => Promise<any>
   followingAdd: (username: string) => Promise<any>
@@ -125,6 +131,11 @@ const api: Api = {
 
   inventoryGet: () => ipcRenderer.invoke('inventory:get'),
   inventoryTransfer: (params) => ipcRenderer.invoke('inventory:transfer', params),
+
+  weaponCatalog: () => ipcRenderer.invoke('weapon:catalog'),
+  wishlistList: () => ipcRenderer.invoke('wishlist:list'),
+  wishlistSave: (entry) => ipcRenderer.invoke('wishlist:save', entry),
+  wishlistRemove: (weaponHash) => ipcRenderer.invoke('wishlist:remove', weaponHash),
 
   // Following (other tracked accounts).
   followingList: () => ipcRenderer.invoke('following:list'),

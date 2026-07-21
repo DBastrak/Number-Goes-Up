@@ -73,9 +73,11 @@ function buildItem(entry, location, instances, statsData, socketsData) {
   const rawSockets = iid ? socketsData?.[iid]?.sockets : null
   const perks = []
   const plugNames = []
+  const perkHashes: number[] = [] // every inserted plug hash — used for wishlist matching
   if (Array.isArray(rawSockets)) {
     for (const s of rawSockets) {
       if (!s.plugHash) continue
+      perkHashes.push(s.plugHash)
       const pd = itemDef(s.plugHash)
       if (!pd?.name) continue
       plugNames.push(pd.name)
@@ -113,6 +115,7 @@ function buildItem(entry, location, instances, statsData, socketsData) {
     location,
     stats: statList,
     perks,
+    perkHashes: category === 'weapon' ? perkHashes : undefined,
     search: searchable
   }
 }

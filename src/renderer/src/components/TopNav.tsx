@@ -6,6 +6,7 @@ const TABS = [
   { id: 'activity', label: 'Recent Runs' },
   { id: 'live', label: 'Live Activity' },
   { id: 'inventory', label: 'Inventory' },
+  { id: 'weapons', label: 'Weapons' },
   { id: 'following', label: 'Following' },
   // "RaD Fun" is a dropdown — its children are real pages.
   {
