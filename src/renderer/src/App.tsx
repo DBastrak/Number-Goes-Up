@@ -6,6 +6,7 @@ import Activity from './pages/Activity'
 import LiveActivity from './pages/LiveActivity'
 import Inventory from './pages/Inventory'
 import Weapons from './pages/Weapons'
+import Vendors from './pages/Vendors'
 import Following from './pages/Following'
 import Bingo from './pages/Bingo'
 import Roulette from './pages/Roulette'
@@ -266,6 +267,7 @@ export default function App() {
           {page === 'live' && <LiveActivity />}
           {page === 'inventory' && <Inventory authenticated={!!user?.session?.authenticated} />}
           {page === 'weapons' && <Weapons />}
+          {page === 'vendors' && <Vendors authenticated={!!user?.session?.authenticated} />}
           {page === 'following' && <Following onOpenRun={(id) => openPgcr(id, 'following')} />}
           {page === 'bingo' && <Bingo />}
           {page === 'roulette' && <Roulette />}

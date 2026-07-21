@@ -14,6 +14,7 @@ import {
 } from './stats'
 import { getLiveActivity } from './live'
 import { getInventory, transferItem, pullFromPostmaster } from './inventory'
+import { getVendors } from './vendors'
 import { ensureManifest, getWeaponCatalog } from './manifest'
 import { readWishlist, saveWishlistEntry, removeWishlistEntry } from './wishlist'
 import {
@@ -429,6 +430,19 @@ app.whenReady().then(() => {
       return await pullFromPostmaster(session, token, params)
     } catch (err) {
       console.error('[main] inventory:pull-postmaster failed:', err)
+      return { ok: false, error: err.message }
+    }
+  })
+
+  // Live vendor offerings (Zavala weekly armour/weapons, Xûr).
+  ipcMain.handle('vendors:get', async () => {
+    const session = readSession()
+    if (!session) return { ok: false, error: 'No session — please log in first.' }
+    try {
+      const token = await getAccessToken()
+      return await getVendors(session, token)
+    } catch (err) {
+      console.error('[main] vendors:get failed:', err)
       return { ok: false, error: err.message }
     }
   })

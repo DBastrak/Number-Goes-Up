@@ -51,6 +51,9 @@ export interface Api {
     toVault: boolean
   }) => Promise<{ ok: boolean; error?: string }>
 
+  // Live vendor offerings (Zavala + Xûr).
+  vendorsGet: () => Promise<any>
+
   // Weapon catalog (random-roll weapons + perk pools) and the god-roll wishlist.
   weaponCatalog: () => Promise<any>
   wishlistList: () => Promise<any>
@@ -139,6 +142,8 @@ const api: Api = {
   inventoryGet: () => ipcRenderer.invoke('inventory:get'),
   inventoryTransfer: (params) => ipcRenderer.invoke('inventory:transfer', params),
   inventoryPullPostmaster: (params) => ipcRenderer.invoke('inventory:pull-postmaster', params),
+
+  vendorsGet: () => ipcRenderer.invoke('vendors:get'),
 
   weaponCatalog: () => ipcRenderer.invoke('weapon:catalog'),
   wishlistList: () => ipcRenderer.invoke('wishlist:list'),
