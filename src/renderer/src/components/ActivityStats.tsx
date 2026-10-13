@@ -40,9 +40,11 @@ const PANTHEON_BANNER_RAID = {
   'The Pantheon: Nezarec Sublime': 'Root of Nightmares'
 }
 
-const DIFF_ORDER = ['normal', 'master', 'prestige', 'contest', 'grandmaster', 'legend', 'expert', 'epic']
+const DIFF_ORDER = ['normal', 'heroic', 'nightfall', 'master', 'prestige', 'contest', 'grandmaster', 'legend', 'expert', 'epic']
 const DIFF_LABELS = {
   normal: 'Normal',
+  heroic: 'Heroic',
+  nightfall: 'Nightfall',
   master: 'Master',
   prestige: 'Prestige',
   contest: 'Contest',
@@ -103,8 +105,9 @@ function StatPopup({ rows }: any) {
 }
 
 // `onBadge(row, label)` (optional) makes the achievement badges clickable — the Activities
-// tab uses it to jump to the fastest run matching that badge.
-export function ActivitySection({ title, cls, totals, rows = [], cols, columns = 4, onBadge }: any) {
+// tab uses it to jump to the fastest run matching that badge. `resolveBg(name)` (optional)
+// overrides the banner art lookup (D1 mode uses its own raid art).
+export function ActivitySection({ title, cls, totals, rows = [], cols, columns = 4, onBadge, resolveBg }: any) {
   return (
     <section className="profile-section">
       <h3 className={`activity-tag ${cls}`} style={{ fontSize: '20px' }}>
@@ -131,16 +134,16 @@ export function ActivitySection({ title, cls, totals, rows = [], cols, columns =
       ) : (
         <div className="activity-grid" style={{ ['--activity-cols' as any]: columns }}>
           {rows.map((r) => {
-            const def = resolveDef(PANTHEON_BANNER_RAID[r.name] || r.name)
+            const bg = resolveBg ? resolveBg(r.name) : resolveDef(PANTHEON_BANNER_RAID[r.name] || r.name)?.bg
             const badges = buildBadges(r)
             return (
               <div key={r.name} className="activity-card">
                 <div
                   className="activity-card-banner"
                   style={
-                    def?.bg
+                    bg
                       ? {
-                          backgroundImage: `linear-gradient(rgba(11,16,23,0.2), rgba(11,16,23,0.85)), url(${def.bg})`
+                          backgroundImage: `linear-gradient(rgba(11,16,23,0.2), rgba(11,16,23,0.85)), url(${bg})`
                         }
                       : undefined
                   }

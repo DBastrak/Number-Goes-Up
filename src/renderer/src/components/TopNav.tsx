@@ -21,6 +21,17 @@ const TABS = [
   { id: 'settings', label: 'Settings' }
 ]
 
+// Destiny 1 mode: raids, strikes, run history, live activity, inventory, vendors, settings.
+const D1_TABS = [
+  { id: 'library', label: 'Raids' },
+  { id: 'strikes', label: 'Strikes' },
+  { id: 'activity', label: 'Recent Runs' },
+  { id: 'live', label: 'Live Activity' },
+  { id: 'inventory', label: 'Inventory' },
+  { id: 'vendors', label: 'Vendors' },
+  { id: 'settings', label: 'Settings' }
+]
+
 export default function TopNav({
   user,
   page,
@@ -30,8 +41,16 @@ export default function TopNav({
   todayClears = null,
   notifCount = 0,
   onBell,
-  onLogout
-}) {
+  onLogout,
+  game = 'd2',
+  games = { d1: false, d2: true },
+  onGameChange,
+  displayName = null,
+  platformLabel = null
+}: any) {
+  const name = displayName || user.name
+  const isD1 = game === 'd1'
+  const tabs: any[] = isD1 ? D1_TABS : TABS
   // Hover-driven dropdown with a short close delay, so the menu survives the cursor
   // travelling from the tab down to the menu items (pure CSS :hover dropped it the
   // instant the pointer left the button).
@@ -52,10 +71,26 @@ export default function TopNav({
       <div className="topnav-brand">
         <span className="topnav-logo">◆</span>
         <span className="topnav-title">number go up</span>
+        <div className="game-toggle" role="group" aria-label="Destiny version">
+          {[
+            { id: 'd1', label: 'D1', missing: 'No Destiny 1 account linked' },
+            { id: 'd2', label: 'D2', missing: 'No Destiny 2 account linked' }
+          ].map((g) => (
+            <button
+              key={g.id}
+              className={`game-toggle-btn ${game === g.id ? 'is-active' : ''}`}
+              disabled={!games[g.id]}
+              onClick={() => onGameChange?.(g.id)}
+              title={games[g.id] ? `Switch to Destiny ${g.id.slice(1)}` : g.missing}
+            >
+              {g.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <nav className="topnav-tabs">
-        {TABS.map((tab) =>
+        {tabs.map((tab) =>
           tab.children ? (
             <div
               key={tab.id}
@@ -100,6 +135,7 @@ export default function TopNav({
       </nav>
 
       <div className="topnav-user">
+        {!isD1 && (
         <span className="topnav-today" title="Full raid & dungeon clears completed today (checkpoints excluded)">
           <span className="topnav-today-icon" aria-hidden="true">
             ⚔
@@ -107,10 +143,13 @@ export default function TopNav({
           <span className="topnav-today-value">{todayClears ?? '—'}</span>
           <span className="topnav-today-label">today</span>
         </span>
-        <button className="topnav-bell" onClick={onBell} title="New clears from people you follow">
-          🔔
-          {notifCount > 0 && <span className="topnav-bell-badge">{notifCount > 99 ? '99+' : notifCount}</span>}
-        </button>
+        )}
+        {!isD1 && (
+          <button className="topnav-bell" onClick={onBell} title="New clears from people you follow">
+            🔔
+            {notifCount > 0 && <span className="topnav-bell-badge">{notifCount > 99 ? '99+' : notifCount}</span>}
+          </button>
+        )}
         <button
           className="topnav-refresh"
           onClick={onRefresh}
@@ -121,11 +160,13 @@ export default function TopNav({
           ⟳
         </button>
         <div className="topnav-avatar" aria-hidden="true">
-          {user.name.slice(0, 1)}
+          {name.slice(0, 1)}
         </div>
         <div className="topnav-user-meta">
-          <span className="topnav-user-name">{user.name}</span>
-          <span className="topnav-user-status">{refreshing ? 'Refreshing…' : 'Online'}</span>
+          <span className="topnav-user-name">{name}</span>
+          <span className="topnav-user-status">
+            {refreshing ? 'Refreshing…' : platformLabel ? `Destiny 1 · ${platformLabel}` : 'Online'}
+          </span>
         </div>
         <button className="topnav-logout" onClick={onLogout}>
           Sign out

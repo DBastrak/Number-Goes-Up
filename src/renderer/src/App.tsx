@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import TopNav from './components/TopNav'
 import Login from './pages/Login'
 import Library from './pages/Library'
+import D1Raids from './pages/D1Raids'
 import Activity from './pages/Activity'
 import LiveActivity from './pages/LiveActivity'
 import Inventory from './pages/Inventory'
@@ -16,6 +17,26 @@ import Notifications from './components/Notifications'
 import ErrorBoundary from './components/ErrorBoundary'
 import { loadWallpaper } from './utils/theme'
 import './styles/app.css'
+
+// Pages available in Destiny 1 mode (everything else is D2-only).
+const D1_PAGES = new Set([
+  'library',
+  'strikes',
+  'activity',
+  'live',
+  'inventory',
+  'vendors',
+  'settings',
+  'pgcr'
+])
+
+function loadGamePref() {
+  try {
+    return localStorage.getItem('ngu-game') === 'd1' ? 'd1' : 'd2'
+  } catch {
+    return 'd2'
+  }
+}
 
 export default function App() {
   const [user, setUser] = useState(null)
@@ -53,6 +74,13 @@ export default function App() {
   const [notifCount, setNotifCount] = useState(0)
   const [showNotifs, setShowNotifs] = useState(false)
   const [notifSince, setNotifSince] = useState(() => new Date().toISOString())
+
+  // Destiny 1 / Destiny 2 mode. `games` says which the account has (drives the toggle).
+  const [game, setGame] = useState<'d1' | 'd2'>(loadGamePref)
+  const [games, setGames] = useState<any>({ d1: false, d2: true })
+  const [d1Data, setD1Data] = useState(null)
+  const [d1State, setD1State] = useState('idle') // idle | loading | done | error
+  const [d1Error, setD1Error] = useState('')
 
   const activities = data?.activities || []
 
@@ -150,6 +178,60 @@ export default function App() {
     [refreshTodayClears]
   )
 
+  const loadD1 = useCallback(async () => {
+    if (!window.api?.d1LoadActivities) return
+    setD1State((s) => (s === 'done' ? s : 'loading'))
+    setD1Error('')
+    try {
+      const res = await window.api.d1LoadActivities()
+      if (res?.ok) {
+        setD1Data(res)
+        setD1State('done')
+      } else {
+        setD1Error(res?.error || 'Failed to load D1 raids.')
+        setD1State('error')
+      }
+    } catch (err) {
+      setD1Error(err.message)
+      setD1State('error')
+    }
+  }, [])
+
+  // Detect which games the account has, and fall back if the saved mode isn't available.
+  useEffect(() => {
+    if (!user || !window.api?.getGameAccounts) return
+    let cancelled = false
+    window.api
+      .getGameAccounts()
+      .then((g) => {
+        if (cancelled || !g) return
+        setGames(g)
+        setGame((cur) => (cur === 'd1' && !g.d1 ? 'd2' : cur === 'd2' && !g.d2 && g.d1 ? 'd1' : cur))
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [user])
+
+  function changeGame(next) {
+    if (next === game || !games[next]) return
+    setGame(next)
+    try {
+      localStorage.setItem('ngu-game', next)
+    } catch {
+      /* per-viewer convenience only */
+    }
+    if (next === 'd1' && !D1_PAGES.has(page)) setPage('library')
+    if (page === 'pgcr') setPage('activity')
+    if (page === 'strikes') setPage('library')
+  }
+
+  // Load D1 raids the first time D1 mode is shown.
+  useEffect(() => {
+    if (user && game === 'd1' && d1State === 'idle') loadD1()
+  }, [user, game, d1State, loadD1])
+
   // Poll today's clears on a slow interval as a fallback to the on-refresh update.
   useEffect(() => {
     if (!user) return
@@ -158,10 +240,10 @@ export default function App() {
     return () => clearInterval(id)
   }, [user, refreshTodayClears])
 
-  // Reload whenever the signed-in account changes.
+  // Reload whenever the signed-in account changes (D2 data only when the account has D2).
   useEffect(() => {
-    if (user) loadData(false)
-  }, [user, loadData])
+    if (user && games.d2) loadData(false)
+  }, [user, games.d2, loadData])
 
   // Where the PGCR back button returns to (recent runs by default; Following when a
   // followed player's badge opened the report).
@@ -184,6 +266,9 @@ export default function App() {
     setUser(null)
     setData(null)
     setActivitiesState('idle')
+    setD1Data(null)
+    setD1State('idle')
+    setGames({ d1: false, d2: true })
     setPage('library')
   }
 
@@ -223,8 +308,13 @@ export default function App() {
         user={user}
         page={page}
         onNavigate={setPage}
-        onRefresh={() => loadData(true)}
-        refreshing={refreshing || activitiesState === 'loading'}
+        displayName={game === 'd1' && games.d1Name ? games.d1Name : user.name}
+        platformLabel={game === 'd1' ? ({ 1: 'Xbox', 2: 'PlayStation' }[games.d1Platform] || null) : null}
+        onRefresh={() => (game === 'd1' ? loadD1() : loadData(true))}
+        refreshing={game === 'd1' ? d1State === 'loading' : refreshing || activitiesState === 'loading'}
+        game={game}
+        games={games}
+        onGameChange={changeGame}
         todayClears={todayClears}
         notifCount={notifCount}
         onBell={toggleNotifs}
@@ -244,8 +334,30 @@ export default function App() {
         />
       )}
       <main className="app-content">
-        <ErrorBoundary resetKey={page}>
-          {page === 'library' && (
+        <ErrorBoundary resetKey={`${game}:${page}`}>
+          {game === 'd1' && (page === 'library' || page === 'strikes') && (
+            <D1Raids
+              key={page}
+              activityMode={page === 'strikes' ? 'strike' : 'raid'}
+              activities={d1Data?.activities || []}
+              state={d1State}
+              error={d1Error}
+              onOpenRun={openPgcr}
+            />
+          )}
+          {game === 'd1' && page === 'activity' && (
+            <Activity
+              key="d1"
+              game="d1"
+              activities={d1Data?.activities || []}
+              state={d1State}
+              error={d1Error}
+              onOpen={openPgcr}
+              playerQuery={runPlayerQuery}
+              onPlayerQuery={setRunPlayerQuery}
+            />
+          )}
+          {game === 'd2' && page === 'library' && (
             <Library
               activities={activities}
               characterClasses={data?.characterClasses}
@@ -254,8 +366,9 @@ export default function App() {
               onOpenRun={openPgcr}
             />
           )}
-          {page === 'activity' && (
+          {game === 'd2' && page === 'activity' && (
             <Activity
+              key="d2"
               activities={activities}
               state={activitiesState}
               error={activitiesError}
@@ -264,10 +377,14 @@ export default function App() {
               onPlayerQuery={setRunPlayerQuery}
             />
           )}
-          {page === 'live' && <LiveActivity />}
-          {page === 'inventory' && <Inventory authenticated={!!user?.session?.authenticated} />}
+          {page === 'live' && <LiveActivity key={game} game={game} />}
+          {page === 'inventory' && (
+            <Inventory key={game} game={game} authenticated={!!user?.session?.authenticated} />
+          )}
           {page === 'weapons' && <Weapons />}
-          {page === 'vendors' && <Vendors authenticated={!!user?.session?.authenticated} />}
+          {page === 'vendors' && (
+            <Vendors key={game} game={game} authenticated={!!user?.session?.authenticated} />
+          )}
           {page === 'following' && <Following onOpenRun={(id) => openPgcr(id, 'following')} />}
           {page === 'bingo' && <Bingo />}
           {page === 'roulette' && <Roulette />}
@@ -275,6 +392,7 @@ export default function App() {
           {page === 'pgcr' && (
             <PgcrDetail
               instanceId={selectedInstance}
+              game={game}
               onBack={() => setPage(pgcrBack)}
               onSearchPlayer={searchPlayerRuns}
             />

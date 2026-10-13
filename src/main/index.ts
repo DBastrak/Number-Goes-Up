@@ -15,6 +15,15 @@ import {
 import { getLiveActivity } from './live'
 import { getInventory, transferItem, pullFromPostmaster } from './inventory'
 import { getVendors } from './vendors'
+import {
+  detectGames,
+  loadD1Activities,
+  getD1Pgcr,
+  getD1Inventory,
+  transferD1Item,
+  getD1LiveActivity,
+  getD1Vendors
+} from './d1'
 import { ensureManifest, getWeaponCatalog } from './manifest'
 import { readWishlist, saveWishlistEntry, removeWishlistEntry } from './wishlist'
 import {
@@ -273,6 +282,28 @@ function writePgcrCache(cache) {
   }
 }
 
+// Separate PGCR cache for D1 raid runs (instanceId -> { teamDeaths, accountCount, players }).
+function d1PgcrCachePath() {
+  return join(app.getPath('userData'), 'pgcr-cache-d1.json')
+}
+function readD1PgcrCache() {
+  try {
+    return JSON.parse(readFileSync(d1PgcrCachePath(), 'utf8'))
+  } catch {
+    return {}
+  }
+}
+
+// Attach which games (D1 / D2) the account has, detecting once and persisting on the session.
+// Re-detects if a previous check found neither game (likely a transient API failure).
+async function withGames(session) {
+  if (!session || (session.games && (session.games.d1 || session.games.d2))) return session
+  session.games = await detectGames(session)
+  currentSession = session
+  saveSession(session)
+  return session
+}
+
 app.whenReady().then(() => {
   // Load the Bungie API key from .env (checks the app dir and cwd).
   // In a packaged build the .env is shipped to the resources dir (see electron-builder.yml).
@@ -324,8 +355,7 @@ app.whenReady().then(() => {
     const win = BrowserWindow.fromWebContents(event.sender)
     const result = await startOAuthLogin(win || undefined)
     if (result.ok && 'session' in result && result.session) {
-      currentSession = result.session
-      saveSession(result.session)
+      await withGames(result.session)
     }
     return result
   })
@@ -335,11 +365,86 @@ app.whenReady().then(() => {
     console.log('[main] login IPC received for:', JSON.stringify(username))
     const result = await lookupGuardian(username)
     if (result.ok) {
-      currentSession = result.session
-      const path = saveSession(result.session)
-      ;(result as any).savedTo = path
+      await withGames(result.session)
     }
     return result
+  })
+
+  // Which games the signed-in account has ({ d1, d2 }) — detected lazily for older sessions.
+  ipcMain.handle('game:accounts', async () => {
+    const session = await withGames(readSession())
+    const d1 = session?.games?.d1
+    // Sessions detected before the D1 name was stored: fill it from the saved memberships.
+    const d1Name =
+      d1?.displayName ||
+      session?.destinyMemberships?.find((m) => m.membershipId === d1?.membershipId)?.displayName ||
+      null
+    return { d1: !!d1, d2: !!session?.games?.d2, d1Name, d1Platform: d1?.membershipType ?? null }
+  })
+
+  // --- Destiny 1 ---
+  const d1Account = () => readSession()?.games?.d1 || null
+
+  ipcMain.handle('d1:load-activities', async () => {
+    const d1 = d1Account()
+    if (!d1) return { ok: false, error: 'No Destiny 1 account linked.' }
+    try {
+      const cache = readD1PgcrCache()
+      const data = await loadD1Activities(d1, cache)
+      writeFileSync(d1PgcrCachePath(), JSON.stringify(cache))
+      return { ok: true, ...data }
+    } catch (err) {
+      console.error('[main] d1:load-activities failed:', err.message)
+      return { ok: false, error: err.message }
+    }
+  })
+
+  ipcMain.handle('d1:get-pgcr', async (_event, instanceId) => {
+    try {
+      return { ok: true, pgcr: await getD1Pgcr(instanceId) }
+    } catch (err) {
+      return { ok: false, error: err.message }
+    }
+  })
+
+  ipcMain.handle('d1:inventory:get', async () => {
+    const d1 = d1Account()
+    if (!d1) return { ok: false, error: 'No Destiny 1 account linked.' }
+    try {
+      return await getD1Inventory(d1, await getAccessToken())
+    } catch (err) {
+      console.error('[main] d1:inventory:get failed:', err.message)
+      return { ok: false, error: err.message }
+    }
+  })
+
+  ipcMain.handle('d1:inventory:transfer', async (_event, params) => {
+    const d1 = d1Account()
+    if (!d1) return { ok: false, error: 'No Destiny 1 account linked.' }
+    try {
+      return await transferD1Item(d1, await getAccessToken(), params)
+    } catch (err) {
+      return { ok: false, error: err.message }
+    }
+  })
+
+  ipcMain.handle('d1:live', async () => {
+    const d1 = d1Account()
+    if (!d1) return { ok: false, error: 'No Destiny 1 account linked.' }
+    try {
+      return await getD1LiveActivity(d1)
+    } catch (err) {
+      return { ok: false, error: err.message }
+    }
+  })
+
+  ipcMain.handle('d1:vendors:get', async () => {
+    try {
+      return await getD1Vendors()
+    } catch (err) {
+      console.error('[main] d1:vendors:get failed:', err.message)
+      return { ok: false, error: err.message }
+    }
   })
 
   // Load all raid + dungeon activities for the logged-in account.
@@ -467,7 +572,7 @@ app.whenReady().then(() => {
   // --- Overlay timer ---
   // Write dragged positions from the overlay window back to disk.
   setOverlayPersist((pos) => {
-    saveOverlayConfig({ ...readOverlayConfig(), x: pos.x, y: pos.y })
+    saveOverlayConfig({ ...readOverlayConfig(), x: pos.x, y: pos.y, displayId: pos.displayId })
   })
 
   ipcMain.handle('get-displays', () => getDisplays())

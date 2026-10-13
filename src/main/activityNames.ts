@@ -113,6 +113,8 @@ export const ACTIVITY_MAP = {
     '2964135793': { name: 'King\'s Fall', difficulty: 'master', raw: 'King\'s Fall: Master' },
     '3446541099': { name: 'Leviathan', difficulty: 'prestige', raw: 'Leviathan: Prestige' },
     '4217492330': { name: 'Vow of the Disciple', difficulty: 'master', raw: 'Vow of the Disciple: Master' },
+    '3711931140': { name: 'Vault of Glass', difficulty: 'normal', raw: 'Vault of Glass' },
+    '1661734046': { name: 'Last Wish', difficulty: 'normal', raw: 'Last Wish: Normal' },
 }
 
 // Look up a raid/dungeon activity by its referenceId. Falls back to a readable

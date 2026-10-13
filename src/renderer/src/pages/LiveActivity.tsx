@@ -4,8 +4,8 @@ import '../styles/live.css'
 const POLL_MS = 1000
 
 // Persist the last result across tab switches so re-opening the tab shows data
-// immediately instead of flashing the loading spinner.
-let cachedLive = null
+// immediately instead of flashing the loading spinner. Keyed by game (d1 / d2).
+const cachedLive: Record<string, any> = {}
 
 function formatElapsed(ms) {
   if (ms < 0) ms = 0
@@ -17,9 +17,9 @@ function formatElapsed(ms) {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${m}:${pad(s)}`
 }
 
-export default function LiveActivity() {
-  const [live, setLive] = useState(cachedLive)
-  const [state, setState] = useState(cachedLive ? 'done' : 'loading') // loading | done | error
+export default function LiveActivity({ game = 'd2' }) {
+  const [live, setLive] = useState(cachedLive[game] || null)
+  const [state, setState] = useState(cachedLive[game] ? 'done' : 'loading') // loading | done | error
   const [error, setError] = useState('')
   const [now, setNow] = useState(Date.now())
 
@@ -28,10 +28,12 @@ export default function LiveActivity() {
     let cancelled = false
     async function poll() {
       try {
-        const res = await window.api?.getLiveActivity?.()
+        const res = await (game === 'd1'
+          ? window.api?.d1GetLiveActivity?.()
+          : window.api?.getLiveActivity?.())
         if (cancelled) return
         if (res?.ok) {
-          cachedLive = res
+          cachedLive[game] = res
           setLive(res)
           setState('done')
         } else {
@@ -51,7 +53,7 @@ export default function LiveActivity() {
       cancelled = true
       clearInterval(id)
     }
-  }, [])
+  }, [game])
 
   // Tick the timer every second.
   useEffect(() => {
@@ -130,7 +132,9 @@ export default function LiveActivity() {
             ) : (
               <>
                 <div className="live-timer">{formatElapsed(elapsed)}</div>
-                <span className="live-timer-label">In activity</span>
+                <span className="live-timer-label">
+                  {live.timerApprox ? 'Since this app first saw the activity' : 'In activity'}
+                </span>
               </>
             )}
           </section>
@@ -212,6 +216,8 @@ export default function LiveActivity() {
               <p className="live-muted">
                 Sign in with your Bungie account to see your live fireteam.
               </p>
+            ) : live.fireteamSource === 'unsupported' ? (
+              <p className="live-muted">Destiny 1 doesn’t report fireteam members.</p>
             ) : live.fireteamSource === 'solo' ? (
               <p className="live-muted">Flying solo — no fireteam right now.</p>
             ) : (

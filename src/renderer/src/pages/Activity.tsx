@@ -26,8 +26,11 @@ export default function Activity({
   error = '',
   onOpen,
   playerQuery = '',
-  onPlayerQuery
+  onPlayerQuery,
+  game = 'd2'
 }) {
+  // D1 carnage reports don't say whether a run started fresh, so Full / Checkpoint don't apply.
+  const clearFilters = game === 'd1' ? CLEAR_FILTERS.filter((c) => c.id === 'all' || c.id === 'incomplete') : CLEAR_FILTERS
   const [limit, setLimit] = useState(PAGE_SIZE)
   const [activityFilter, setActivityFilter] = useState('all')
   const [teamFilter, setTeamFilter] = useState('all')
@@ -130,7 +133,7 @@ export default function Activity({
           </div>
 
           <div className="run-filter-chips">
-            {CLEAR_FILTERS.map((c) => (
+            {clearFilters.map((c) => (
               <button
                 key={c.id}
                 className={`run-chip ${clearType === c.id ? 'is-active' : ''}`}
@@ -228,7 +231,7 @@ export default function Activity({
                     <p className="activity-title">
                       {item.completed ? 'Completed' : 'Incomplete'}
                       <span className="activity-pill">{formatDuration(item.durationSeconds)}</span>
-                      <span className={`activity-tag ${item.mode === 'raid' ? 'tag-raid' : 'tag-dungeon'}`}>
+                      <span className={`activity-tag tag-${item.mode}`}>
                         {item.mode}
                       </span>
                       {item.difficulty && item.difficulty !== 'normal' && (

@@ -248,7 +248,12 @@ export function showOverlay(cfg: OverlayCfg = {}) {
         if (!overlayWin) return
         const [x, y] = overlayWin.getPosition()
         customPos = { x, y }
-        persistFn?.({ x, y })
+        // Also record the monitor it was dropped on, so the saved monitor stays truthful.
+        const displayId = screen.getDisplayNearestPoint({
+          x: x + Math.floor(OVERLAY_W / 2),
+          y: y + Math.floor(OVERLAY_H / 2)
+        }).id
+        persistFn?.({ x, y, displayId })
       }, 250)
     })
 

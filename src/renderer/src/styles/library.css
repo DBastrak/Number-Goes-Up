@@ -404,6 +404,10 @@
   background: rgba(75, 194, 168, 0.18);
   color: var(--text-bright);
 }
+.tag-strike {
+  background: rgba(59, 130, 246, 0.18);
+  color: var(--text-bright);
+}
 .game-card-meta {
   margin: 0;
   font-size: 12px;
@@ -411,4 +415,13 @@
 }
 .game-card-meta.dim {
   color: var(--text-dim);
+}
+
+/* D1 raids: All / Normal / Prestige filter above the raid grid. */
+.d1-mode-chips {
+  margin-bottom: 12px;
+}
+
+.d1-mode-chips {
+  display: inline-flex;
 }

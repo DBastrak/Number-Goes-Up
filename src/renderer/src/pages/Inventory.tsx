@@ -24,6 +24,16 @@ const BUCKET_LABEL = {
   20886954: 'Legs',
   1585787867: 'Class Item'
 }
+// D1 names the weapon slots differently and adds Artifact + Ghost.
+const D1_BUCKET_LABEL = {
+  ...BUCKET_LABEL,
+  1498876634: 'Primary',
+  2465295065: 'Special',
+  953998645: 'Heavy',
+  434908299: 'Artifact',
+  4023194814: 'Ghost'
+}
+let bucketLabels = BUCKET_LABEL
 
 // Group a column's items into per-slot sections, ordered by slot. Used for character
 // columns (single class, so slot grouping is enough).
@@ -33,7 +43,7 @@ function groupBySlot(items) {
   for (const it of items) {
     let g = byBucket.get(it.bucket)
     if (!g) {
-      g = { key: it.bucket, order: it.bucketOrder, label: BUCKET_LABEL[it.bucket] || 'Other', items: [] }
+      g = { key: it.bucket, order: it.bucketOrder, label: bucketLabels[it.bucket] || 'Other', items: [] }
       byBucket.set(it.bucket, g)
       groups.push(g)
     }
@@ -68,7 +78,7 @@ function groupVault(items) {
     if (it.category === 'weapon') {
       let sg = weapons.get(it.bucket)
       if (!sg) {
-        sg = { key: `w${it.bucket}`, label: BUCKET_LABEL[it.bucket] || 'Weapons', order: it.bucketOrder, subs: [], map: new Map() }
+        sg = { key: `w${it.bucket}`, label: bucketLabels[it.bucket] || 'Weapons', order: it.bucketOrder, subs: [], map: new Map() }
         weapons.set(it.bucket, sg)
         weaponSG.push(sg)
       }
@@ -81,7 +91,7 @@ function groupVault(items) {
         armour.set(it.classType, sg)
         armourSG.push(sg)
       }
-      sub(sg, it.bucket, BUCKET_LABEL[it.bucket] || 'Armour', it.bucketOrder).items.push(it)
+      sub(sg, it.bucket, bucketLabels[it.bucket] || 'Armour', it.bucketOrder).items.push(it)
     }
   }
 
@@ -96,7 +106,12 @@ function tierClass(tier) {
   return tier === 6 ? 'is-exotic' : tier === 5 ? 'is-legendary' : tier === 4 ? 'is-rare' : 'is-common'
 }
 
-export default function Inventory({ authenticated }) {
+export default function Inventory({ authenticated, game = 'd2' }) {
+  const isD1 = game === 'd1'
+  bucketLabels = isD1 ? D1_BUCKET_LABEL : BUCKET_LABEL
+  // D1 has its own read/transfer endpoints; the postmaster + wishlist are D2-only.
+  const inventoryGet = isD1 ? window.api?.d1InventoryGet : window.api?.inventoryGet
+  const inventoryTransfer = isD1 ? window.api?.d1InventoryTransfer : window.api?.inventoryTransfer
   const [data, setData] = useState(null) // { characters, columns }
   const [state, setState] = useState('idle') // idle | loading | done | error
   const [error, setError] = useState('')
@@ -113,6 +128,7 @@ export default function Inventory({ authenticated }) {
 
   useEffect(() => {
     let cancelled = false
+    if (isD1) return
     window.api
       ?.wishlistList?.()
       .then((r) => !cancelled && r?.ok && setWishlist(r.list))
@@ -120,7 +136,7 @@ export default function Inventory({ authenticated }) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [isD1])
 
   const flash = useCallback((msg) => {
     setToast(msg)
@@ -130,10 +146,10 @@ export default function Inventory({ authenticated }) {
   useEffect(() => () => clearTimeout(toastTimer.current), [])
 
   const load = useCallback(async (background = false) => {
-    if (!window.api?.inventoryGet) return
+    if (!inventoryGet) return
     if (!background) setState('loading')
     try {
-      const res = await window.api.inventoryGet()
+      const res = await inventoryGet()
       if (res?.ok) {
         setData({ characters: res.characters, columns: res.columns, postmaster: res.postmaster || {} })
         setState('done')
@@ -145,7 +161,7 @@ export default function Inventory({ authenticated }) {
       setError(err.message)
       setState('error')
     }
-  }, [])
+  }, [inventoryGet])
 
   useEffect(() => {
     if (authenticated) load(false)
@@ -208,7 +224,7 @@ export default function Inventory({ authenticated }) {
     setBusy(true)
     try {
       if (evict) {
-        const r = await window.api.inventoryTransfer({
+        const r = await inventoryTransfer({
           itemHash: evict.hash,
           itemId: evict.instanceId,
           from: toCol,
@@ -221,7 +237,7 @@ export default function Inventory({ authenticated }) {
           return
         }
       }
-      const res = await window.api.inventoryTransfer({
+      const res = await inventoryTransfer({
         itemHash: item.hash,
         itemId: item.instanceId,
         from,
@@ -464,7 +480,7 @@ export default function Inventory({ authenticated }) {
                   <span className="inv-col-count">
                     {showingPostmaster ? pmItems.length : items.length}
                   </span>
-                  {!isVault && (
+                  {!isVault && !isD1 && (
                     <button
                       className={`inv-pm-btn ${showingPostmaster ? 'is-on' : ''}`}
                       onClick={() => togglePostmaster(col.id)}

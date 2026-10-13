@@ -4,8 +4,9 @@ import '../styles/vendors.css'
 // Vendors: this week's live offerings from Zavala (Vanguard) and Xûr. Needs a Bungie
 // sign-in (vendor data is per-account). Armour shows its stat spread; weapons show all
 // possible perks per column plus the origin trait and current masterwork.
+// Destiny 1 mode lists every public vendor (no sign-in) with its stock grouped by category.
 
-let vendorsCache = null
+const vendorsCache: Record<string, any> = {}
 
 function tierClass(tier) {
   return tier === 6 ? 'is-exotic' : tier === 5 ? 'is-legendary' : 'is-rare'
@@ -21,7 +22,8 @@ function WeaponCard({ w }) {
         </span>
         <div className="vn-weapon-meta">
           <span className="vn-weapon-name">{w.name}</span>
-          <span className="vn-weapon-type">{w.typeName}</span>
+          <span className="vn-weapon-type">{w.typeName || w.detail}</span>
+          {w.stats?.length > 0 && <StatList stats={w.stats} />}
           {w.masterwork && <span className="vn-mw">✦ {w.masterwork}</span>}
         </div>
           <div className="vn-cols">
@@ -53,6 +55,19 @@ function WeaponCard({ w }) {
   )
 }
 
+function StatList({ stats }) {
+  return (
+    <div className="vn-stats">
+      {stats.map((s, i) => (
+        <span key={i} className="vn-stat">
+          <span className="vn-stat-name">{s.name}</span>
+          <span className="vn-stat-val">{s.value}</span>
+        </span>
+      ))}
+    </div>
+  )
+}
+
 function ArmorCard({ a }) {
   return (
     <div className={`vn-armor ${tierClass(a.tier)}`}>
@@ -62,14 +77,8 @@ function ArmorCard({ a }) {
       </span>
       <div className="vn-armor-meta">
         <span className="vn-armor-name">{a.name}</span>
-        <div className="vn-stats">
-          {(a.stats || []).map((s, i) => (
-            <span key={i} className="vn-stat">
-              <span className="vn-stat-name">{s.name}</span>
-              <span className="vn-stat-val">{s.value}</span>
-            </span>
-          ))}
-        </div>
+        {a.detail && <span className="vn-weapon-type">{a.detail}</span>}
+        <StatList stats={a.stats || []} />
       </div>
     </div>
   )
@@ -103,23 +112,63 @@ function ArmorByClass({ armour }) {
   )
 }
 
-export default function Vendors({ authenticated }) {
-  const [data, setData] = useState(vendorsCache)
-  const [state, setState] = useState(vendorsCache ? 'done' : 'loading')
+// One D1 vendor: each sale category as a section, rolled gear first (perk columns), then the rest.
+function D1VendorBody({ vendor }) {
+  return (
+    <>
+      {vendor.nextRefresh && !vendor.nextRefresh.startsWith('9999') && (
+        <div className="vn-away">Stock refreshes {new Date(vendor.nextRefresh).toLocaleString()}</div>
+      )}
+      {vendor.categories.map((category, ci) => {
+        const rolled = category.items.filter((it) => it.columns)
+        const plain = category.items.filter((it) => !it.columns)
+        return (
+          <section key={ci} className="vn-section">
+            <h3 className="vn-section-title">
+              {category.title} <span className="vn-count">{category.items.length}</span>
+            </h3>
+            {rolled.length > 0 && (
+              <div className="vn-weapon-list">
+                {rolled.map((it, i) => (
+                  <WeaponCard key={i} w={it} />
+                ))}
+              </div>
+            )}
+            {plain.length > 0 && (
+              <div className="vn-armor-grid">
+                {plain.map((it, i) => (
+                  <ArmorCard key={i} a={it} />
+                ))}
+              </div>
+            )}
+          </section>
+        )
+      })}
+    </>
+  )
+}
+
+export default function Vendors({ authenticated, game = 'd2' }) {
+  const isD1 = game === 'd1'
+  const canLoad = authenticated || isD1
+  const getVendors = isD1 ? window.api?.d1VendorsGet : window.api?.vendorsGet
+  const [data, setData] = useState(vendorsCache[game] || null)
+  const [state, setState] = useState(vendorsCache[game] ? 'done' : 'loading')
   const [error, setError] = useState('')
   const [tab, setTab] = useState('zavala')
+  const [d1VendorHash, setD1VendorHash] = useState(null)
 
   useEffect(() => {
-    if (!authenticated) return
+    if (!canLoad) return
     let cancelled = false
     async function load() {
-      if (vendorsCache) return
+      if (vendorsCache[game]) return
       setState('loading')
       try {
-        const res = await window.api?.vendorsGet?.()
+        const res = await getVendors?.()
         if (cancelled) return
         if (res?.ok) {
-          vendorsCache = res
+          vendorsCache[game] = res
           setData(res)
           setState('done')
         } else {
@@ -137,15 +186,15 @@ export default function Vendors({ authenticated }) {
     return () => {
       cancelled = true
     }
-  }, [authenticated])
+  }, [canLoad, game])
 
   function refresh() {
-    vendorsCache = null
+    delete vendorsCache[game]
     setData(null)
     setState('loading')
-    window.api?.vendorsGet?.().then((res) => {
+    getVendors?.().then((res) => {
       if (res?.ok) {
-        vendorsCache = res
+        vendorsCache[game] = res
         setData(res)
         setState('done')
       } else {
@@ -155,7 +204,7 @@ export default function Vendors({ authenticated }) {
     })
   }
 
-  if (!authenticated) {
+  if (!canLoad) {
     return (
       <div className="vn-gate">
         <div className="vn-gate-icon">🔐</div>
@@ -167,18 +216,34 @@ export default function Vendors({ authenticated }) {
     )
   }
 
-  const v = tab === 'zavala' ? data?.zavala : data?.xur
+  const v = isD1 ? null : tab === 'zavala' ? data?.zavala : data?.xur
+  const d1Vendors = isD1 ? data?.vendors || [] : []
+  const d1Vendor = d1Vendors.find((vendor) => vendor.hash === d1VendorHash) || d1Vendors[0]
 
   return (
     <div className="vn">
       <header className="vn-toolbar">
         <div className="vn-tabs">
-          <button className={`vn-tab ${tab === 'zavala' ? 'is-on' : ''}`} onClick={() => setTab('zavala')}>
-            Zavala
-          </button>
-          <button className={`vn-tab ${tab === 'xur' ? 'is-on' : ''}`} onClick={() => setTab('xur')}>
-            Xûr
-          </button>
+          {isD1 ? (
+            d1Vendors.map((vendor) => (
+              <button
+                key={vendor.hash}
+                className={`vn-tab ${vendor === d1Vendor ? 'is-on' : ''}`}
+                onClick={() => setD1VendorHash(vendor.hash)}
+              >
+                {vendor.name}
+              </button>
+            ))
+          ) : (
+            <>
+              <button className={`vn-tab ${tab === 'zavala' ? 'is-on' : ''}`} onClick={() => setTab('zavala')}>
+                Zavala
+              </button>
+              <button className={`vn-tab ${tab === 'xur' ? 'is-on' : ''}`} onClick={() => setTab('xur')}>
+                Xûr
+              </button>
+            </>
+          )}
         </div>
         <button className="vn-refresh" onClick={refresh} disabled={state === 'loading'}>
           {state === 'loading' ? 'Loading…' : '⟳ Refresh'}
@@ -191,6 +256,16 @@ export default function Vendors({ authenticated }) {
         </div>
       )}
       {state === 'error' && <div className="vn-status is-error">Couldn’t load vendors: {error}</div>}
+
+      {state === 'done' && isD1 && (
+        <div className="vn-body">
+          {d1Vendor ? (
+            <D1VendorBody vendor={d1Vendor} />
+          ) : (
+            <div className="vn-away">No Destiny 1 vendors are reporting stock right now.</div>
+          )}
+        </div>
+      )}
 
       {state === 'done' && v && (
         <div className="vn-body">

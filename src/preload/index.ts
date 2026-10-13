@@ -22,6 +22,27 @@ export interface Api {
   getAuthStatus: () => Promise<{ configured: boolean; authenticated: boolean }>
   startBungieLogin: () => Promise<any>
 
+  // Which games the account has — drives the D1/D2 navbar toggle.
+  getGameAccounts: () => Promise<{
+    d1: boolean
+    d2: boolean
+    d1Name: string | null
+    d1Platform: number | null
+  }>
+
+  // Destiny 1 mode: raid history (+ PGCR), inventory read + transfer. Same shapes as D2.
+  d1LoadActivities: () => Promise<any>
+  d1GetPgcr: (instanceId: string) => Promise<any>
+  d1InventoryGet: () => Promise<any>
+  d1InventoryTransfer: (params: {
+    itemHash: number
+    itemId: string
+    from: string
+    to: string
+  }) => Promise<{ ok: boolean; error?: string }>
+  d1GetLiveActivity: () => Promise<any>
+  d1VendorsGet: () => Promise<any>
+
   // Loads all raid + dungeon activities for the logged-in account.
   // Returns { ok: true, activities, characterIds, ... } or { ok: false, error }.
   loadActivities: () => Promise<any>
@@ -132,6 +153,14 @@ const api: Api = {
 
   getAuthStatus: () => ipcRenderer.invoke('oauth:status'),
   startBungieLogin: () => ipcRenderer.invoke('oauth:start'),
+
+  getGameAccounts: () => ipcRenderer.invoke('game:accounts'),
+  d1LoadActivities: () => ipcRenderer.invoke('d1:load-activities'),
+  d1GetPgcr: (instanceId) => ipcRenderer.invoke('d1:get-pgcr', instanceId),
+  d1InventoryGet: () => ipcRenderer.invoke('d1:inventory:get'),
+  d1InventoryTransfer: (params) => ipcRenderer.invoke('d1:inventory:transfer', params),
+  d1GetLiveActivity: () => ipcRenderer.invoke('d1:live'),
+  d1VendorsGet: () => ipcRenderer.invoke('d1:vendors:get'),
 
   loadActivities: () => ipcRenderer.invoke('load-activities'),
 

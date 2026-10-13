@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react'
 import { formatDuration, formatDate } from '../utils/format'
 import { resolveDef } from '../data/activityDefs'
+import { d1RaidBg } from '../data/d1Raids'
 import '../styles/pgcr.css'
 
-export default function PgcrDetail({ instanceId, onBack, onSearchPlayer }) {
+export default function PgcrDetail({ instanceId, onBack, onSearchPlayer, game = 'd2' }) {
   const [state, setState] = useState('loading') // loading | done | error
   const [pgcr, setPgcr] = useState(null)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!instanceId || !window.api?.getPgcr) return
+    const getPgcr = game === 'd1' ? window.api?.d1GetPgcr : window.api?.getPgcr
+    if (!instanceId || !getPgcr) return
     let cancelled = false
 
     setState('loading')
-    window.api
-      .getPgcr(instanceId)
+    getPgcr(instanceId)
       .then((res) => {
         if (cancelled) return
         if (res?.ok && res.pgcr) {
@@ -34,9 +35,14 @@ export default function PgcrDetail({ instanceId, onBack, onSearchPlayer }) {
     return () => {
       cancelled = true
     }
-  }, [instanceId])
+  }, [instanceId, game])
 
-  const bg = state === 'done' && pgcr ? resolveDef(pgcr.activityName)?.bg : null
+  const bg =
+    state === 'done' && pgcr
+      ? game === 'd1'
+        ? pgcr.bg || d1RaidBg(pgcr.activityName)
+        : resolveDef(pgcr.activityName)?.bg
+      : null
 
   return (
     <div className="pgcr">

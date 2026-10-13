@@ -126,6 +126,13 @@ export default function Settings() {
     window.api?.setOverlay?.(next)
   }
 
+  // Picking a monitor is an explicit move: drop any dragged position and snap to that
+  // monitor's top-left corner (move-overlay resets x/y; set-overlay alone would keep them).
+  function changeOverlayDisplay(displayId) {
+    setOverlay((o) => ({ ...o, displayId }))
+    window.api?.moveOverlay?.(displayId)
+  }
+
   // Alignment is persisted + pushed to the overlay separately from enable/monitor.
   function updateAlign(align) {
     setOverlay((o) => ({ ...o, align }))
@@ -292,7 +299,7 @@ export default function Settings() {
           <select
             className="settings-select"
             value={overlay.displayId ?? ''}
-            onChange={(e) => updateOverlay({ displayId: Number(e.target.value) })}
+            onChange={(e) => changeOverlayDisplay(Number(e.target.value))}
           >
             {displays.length === 0 && <option value="">No displays found</option>}
             {displays.map((d) => (
