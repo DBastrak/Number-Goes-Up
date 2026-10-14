@@ -21,6 +21,7 @@
 /* Interactive elements must stay clickable, not draggable. */
 .topnav button,
 .topnav input,
+.topnav select,
 .topnav .win-controls {
   -webkit-app-region: no-drag;
 }
