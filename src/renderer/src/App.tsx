@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import TopNav from './components/TopNav'
 import Login from './pages/Login'
 import Library from './pages/Library'
@@ -178,12 +178,17 @@ export default function App() {
     [refreshTodayClears]
   )
 
+  // Bumped per load so a slow load for the previously selected D1 account is discarded
+  // instead of overwriting the newly selected one.
+  const d1LoadId = useRef(0)
   const loadD1 = useCallback(async () => {
     if (!window.api?.d1LoadActivities) return
+    const loadId = ++d1LoadId.current
     setD1State((s) => (s === 'done' ? s : 'loading'))
     setD1Error('')
     try {
       const res = await window.api.d1LoadActivities()
+      if (loadId !== d1LoadId.current) return
       if (res?.ok) {
         setD1Data(res)
         setD1State('done')
@@ -192,10 +197,21 @@ export default function App() {
         setD1State('error')
       }
     } catch (err) {
+      if (loadId !== d1LoadId.current) return
       setD1Error(err.message)
       setD1State('error')
     }
   }, [])
+
+  async function changeD1Account(membershipId) {
+    const res = await window.api?.d1SelectAccount?.(membershipId)
+    if (!res?.ok) return
+    d1LoadId.current++
+    setGames(await window.api.getGameAccounts())
+    setD1Data(null)
+    setD1State('idle')
+    if (page === 'pgcr') setPage('activity')
+  }
 
   // Detect which games the account has, and fall back if the saved mode isn't available.
   useEffect(() => {
@@ -315,6 +331,7 @@ export default function App() {
         game={game}
         games={games}
         onGameChange={changeGame}
+        onD1AccountChange={changeD1Account}
         todayClears={todayClears}
         notifCount={notifCount}
         onBell={toggleNotifs}
@@ -379,7 +396,7 @@ export default function App() {
           )}
           {page === 'live' && <LiveActivity key={game} game={game} />}
           {page === 'inventory' && (
-            <Inventory key={game} game={game} authenticated={!!user?.session?.authenticated} />
+            <Inventory key={`${game}:${games.d1Id}`} game={game} authenticated={!!user?.session?.authenticated} />
           )}
           {page === 'weapons' && <Weapons />}
           {page === 'vendors' && (

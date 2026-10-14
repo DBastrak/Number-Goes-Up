@@ -63,28 +63,44 @@ function describeRaid(hash, defs?) {
 }
 
 const HISTORY_MODES = ['Raid', 'AllStrikes']
-// DestinyActivityModeType -> strike difficulty (3 Strike, 16 Nightfall, 17 Heroic, 18 AllStrikes).
-const STRIKE_DIFFICULTY = { 3: 'normal', 16: 'nightfall', 17: 'heroic', 18: 'normal' }
+// DestinyActivityModeType values the strike history returns (3 Strike, 16 Heroic, 17 Nightfall,
+// 18 AllStrikes).
+const STRIKE_MODES = new Set([3, 16, 17, 18])
+const HEROIC_MODE = 16
+const NIGHTFALL_MODE = 17
+const NIGHTFALL_ACTIVITY_TYPE = 344644403 // ACTIVITY_TYPE_NIGHTFALL
+
+// Heroic runs mostly come back as plain mode 3, so they are recognised by the definition:
+// a tier 2+ variant, or the "Epic" modifier the heroic playlists carry.
+function strikeDifficulty(details, def) {
+  if (details.mode === NIGHTFALL_MODE || def?.activityTypeHash === NIGHTFALL_ACTIVITY_TYPE) {
+    return 'nightfall'
+  }
+  const hasEpicModifier = (def?.skulls || []).some((skull) => skull.displayName === 'Epic')
+  if (details.mode === HEROIC_MODE || (def?.tier ?? 1) >= 2 || hasEpicModifier) return 'heroic'
+  return 'normal'
+}
 
 // Strikes have too many hash variants to list, so their name and banner art come from the
 // inline definition instead of a hash table.
 function describeActivity(details, defs?) {
   const hash = details?.referenceId
-  const strikeDifficulty = STRIKE_DIFFICULTY[details?.mode]
-  if (!strikeDifficulty) return { mode: 'raid', bg: null, ...describeRaid(hash, defs) }
+  if (!STRIKE_MODES.has(details?.mode)) return { mode: 'raid', bg: null, ...describeRaid(hash, defs) }
   const def = defs?.[hash]
   return {
     mode: 'strike',
     name: def?.activityName || `Strike ${hash}`,
-    difficulty: strikeDifficulty,
+    difficulty: strikeDifficulty(details, def),
     bg: iconUrl(def?.pgcrImage)
   }
 }
 
 // --- Account detection ---
 
-// Find the D1 account among a session's Destiny memberships (PSN/Xbox only), or null.
-export async function findD1Account(memberships = []) {
+// Every D1 account among a session's Destiny memberships (PSN/Xbox only). A Bungie account
+// with both platforms linked can have one on each.
+export async function findD1Accounts(memberships = []) {
+  const accounts = []
   const candidates = memberships.filter((m) => D1_PLATFORMS.has(m.membershipType))
   for (const m of candidates) {
     const { body } = await bungieGet(
@@ -93,16 +109,16 @@ export async function findD1Account(memberships = []) {
     )
     const chars = body?.Response?.data?.characters
     if (body?.ErrorCode === 1 && Array.isArray(chars) && chars.length > 0) {
-      return {
+      accounts.push({
         membershipType: m.membershipType,
         membershipId: m.membershipId,
         // D1 predates Bungie names — the platform (PSN / Xbox) name is the account's real name.
         displayName: m.displayName || null,
         characters: chars.length
-      }
+      })
     }
   }
-  return null
+  return accounts
 }
 
 // Does the session's primary membership have a D2 profile?
@@ -115,13 +131,13 @@ async function hasD2Profile(session) {
   return body?.ErrorCode === 1
 }
 
-// Which games this account can use: { d1: {membershipType, membershipId} | null, d2: bool }.
+// Which games this account can use: { d1: the selected D1 account | null, d1Accounts, d2: bool }.
 export async function detectGames(session) {
-  const [d1, d2] = await Promise.all([
-    findD1Account(session?.destinyMemberships || []).catch(() => null),
+  const [d1Accounts, d2] = await Promise.all([
+    findD1Accounts(session?.destinyMemberships || []).catch(() => []),
     hasD2Profile(session).catch(() => false)
   ])
-  return { d1, d2, checkedAt: new Date().toISOString() }
+  return { d1: d1Accounts[0] || null, d1Accounts, d2, checkedAt: new Date().toISOString() }
 }
 
 // --- Characters ---

@@ -28,7 +28,10 @@ export interface Api {
     d2: boolean
     d1Name: string | null
     d1Platform: number | null
+    d1Id: string | null
+    d1Accounts: { membershipId: string; membershipType: number; displayName: string | null }[]
   }>
+  d1SelectAccount: (membershipId: string) => Promise<{ ok: boolean; error?: string }>
 
   // Destiny 1 mode: raid history (+ PGCR), inventory read + transfer. Same shapes as D2.
   d1LoadActivities: () => Promise<any>
@@ -155,6 +158,7 @@ const api: Api = {
   startBungieLogin: () => ipcRenderer.invoke('oauth:start'),
 
   getGameAccounts: () => ipcRenderer.invoke('game:accounts'),
+  d1SelectAccount: (membershipId) => ipcRenderer.invoke('d1:select-account', membershipId),
   d1LoadActivities: () => ipcRenderer.invoke('d1:load-activities'),
   d1GetPgcr: (instanceId) => ipcRenderer.invoke('d1:get-pgcr', instanceId),
   d1InventoryGet: () => ipcRenderer.invoke('d1:inventory:get'),

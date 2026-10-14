@@ -172,6 +172,15 @@
   color: var(--text-bright);
   font-size: 12px;
 }
+.topnav-account-select {
+  background: var(--bg-2);
+  color: var(--text-bright);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 1px 4px;
+  cursor: pointer;
+}
 .topnav-logout {
   margin-left: 8px;
   background: var(--bg-2);

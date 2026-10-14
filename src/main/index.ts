@@ -295,9 +295,11 @@ function readD1PgcrCache() {
 }
 
 // Attach which games (D1 / D2) the account has, detecting once and persisting on the session.
-// Re-detects if a previous check found neither game (likely a transient API failure).
+// Re-detects if a previous check found neither game (likely a transient API failure), or if
+// the session was saved before the D1 account picker (no d1Accounts list).
 async function withGames(session) {
-  if (!session || (session.games && (session.games.d1 || session.games.d2))) return session
+  const games = session?.games
+  if (!session || (games && (games.d1 || games.d2) && games.d1Accounts)) return session
   session.games = await detectGames(session)
   currentSession = session
   saveSession(session)
@@ -379,7 +381,29 @@ app.whenReady().then(() => {
       d1?.displayName ||
       session?.destinyMemberships?.find((m) => m.membershipId === d1?.membershipId)?.displayName ||
       null
-    return { d1: !!d1, d2: !!session?.games?.d2, d1Name, d1Platform: d1?.membershipType ?? null }
+    return {
+      d1: !!d1,
+      d2: !!session?.games?.d2,
+      d1Name,
+      d1Platform: d1?.membershipType ?? null,
+      d1Id: d1?.membershipId ?? null,
+      d1Accounts: (session?.games?.d1Accounts || []).map((a) => ({
+        membershipId: a.membershipId,
+        membershipType: a.membershipType,
+        displayName: a.displayName
+      }))
+    }
+  })
+
+  // Switch which linked D1 account (PlayStation / Xbox) the D1 pages read.
+  ipcMain.handle('d1:select-account', (_event, membershipId) => {
+    const session = readSession()
+    const account = session?.games?.d1Accounts?.find((a) => a.membershipId === membershipId)
+    if (!account) return { ok: false, error: 'That Destiny 1 account is not linked.' }
+    session.games.d1 = account
+    currentSession = session
+    saveSession(session)
+    return { ok: true }
   })
 
   // --- Destiny 1 ---

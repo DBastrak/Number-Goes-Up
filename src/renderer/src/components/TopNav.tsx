@@ -32,6 +32,8 @@ const D1_TABS = [
   { id: 'settings', label: 'Settings' }
 ]
 
+const D1_PLATFORM_LABEL = { 1: 'Xbox', 2: 'PlayStation' }
+
 export default function TopNav({
   user,
   page,
@@ -45,6 +47,7 @@ export default function TopNav({
   game = 'd2',
   games = { d1: false, d2: true },
   onGameChange,
+  onD1AccountChange,
   displayName = null,
   platformLabel = null
 }: any) {
@@ -164,9 +167,26 @@ export default function TopNav({
         </div>
         <div className="topnav-user-meta">
           <span className="topnav-user-name">{name}</span>
-          <span className="topnav-user-status">
-            {refreshing ? 'Refreshing…' : platformLabel ? `Destiny 1 · ${platformLabel}` : 'Online'}
-          </span>
+          {isD1 && games.d1Accounts?.length > 1 ? (
+            <select
+              className="topnav-account-select"
+              value={games.d1Id || ''}
+              onChange={(e) => onD1AccountChange?.(e.target.value)}
+              aria-label="Destiny 1 account"
+              title="Switch Destiny 1 account"
+            >
+              {games.d1Accounts.map((account) => (
+                <option key={account.membershipId} value={account.membershipId}>
+                  {D1_PLATFORM_LABEL[account.membershipType] || 'Destiny 1'}
+                  {account.displayName ? ` · ${account.displayName}` : ''}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="topnav-user-status">
+              {refreshing ? 'Refreshing…' : platformLabel ? `Destiny 1 · ${platformLabel}` : 'Online'}
+            </span>
+          )}
         </div>
         <button className="topnav-logout" onClick={onLogout}>
           Sign out
