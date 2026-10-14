@@ -158,6 +158,18 @@ async function getD1Characters(d1) {
   }))
 }
 
+// The account Summary lists only live characters, but deleted characters keep their history
+// (and their clears). The account stats endpoint still lists them, flagged `deleted`.
+async function getDeletedD1Characters(d1, liveCharacters) {
+  const { body } = await bungieGet(
+    `${BASE}/Destiny/Stats/Account/${d1.membershipType}/${d1.membershipId}/`
+  )
+  const liveIds = new Set(liveCharacters.map((c) => c.id))
+  return (body?.Response?.characters || [])
+    .filter((c) => c.deleted && !liveIds.has(c.characterId))
+    .map((c) => ({ id: c.characterId, class: 'Deleted character' }))
+}
+
 // --- Raid + strike history ---
 
 async function getCharacterHistory(d1, characterId, historyMode) {
@@ -177,6 +189,9 @@ async function getCharacterHistory(d1, characterId, historyMode) {
         if (seen.has(details.instanceId)) continue
         seen.add(details.instanceId)
       }
+      // Only strike modes count as strikes; anything else in this list (e.g. a story mission)
+      // would otherwise fall through to "raid" in describeActivity.
+      if (historyMode === 'AllStrikes' && !STRIKE_MODES.has(details.mode)) continue
       const info = describeActivity(details, defs)
       const values = a.values || {}
       all.push({
@@ -207,7 +222,7 @@ async function getCharacterHistory(d1, characterId, historyMode) {
 export async function loadD1Activities(d1, cache = {}) {
   const characters = await getD1Characters(d1)
   const byInstance = new Map()
-  for (const c of characters) {
+  for (const c of [...characters, ...(await getDeletedD1Characters(d1, characters))]) {
     for (const historyMode of HISTORY_MODES) {
       for (const a of await getCharacterHistory(d1, c.id, historyMode)) {
         a.className = c.class
